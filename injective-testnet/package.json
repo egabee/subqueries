@@ -1,0 +1,46 @@
+{
+  "name": "injective-testnet",
+  "version": "0.0.1",
+  "description": "Injective testnet subquery",
+  "homepage": "https://github.com/web3query/subqueries",
+  "repository": "github:web3query/subqueries",
+  "author": "Web3query Team",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "subql build",
+    "cp:proto": "cp -r ../common/proto ./proto",
+    "codegen": "subql codegen",
+    "start:docker": "docker-compose pull && docker-compose up --remove-orphans",
+    "dev": "subql codegen && subql build && docker-compose pull && docker-compose up --remove-orphans",
+    "prepack": "rm -rf dist && npm run build",
+    "test": "subql build && subql-node-cosmos test"
+  },
+  "files": [
+    "dist",
+    "schema.graphql",
+    "project.yaml"
+  ],
+  "devDependencies": {
+    "@cosmjs/stargate": "^0.28.9",
+    "@subql/cli": "latest",
+    "@subql/node-cosmos": "^2.3.0",
+    "@subql/testing": "latest",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.3.2",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@cosmjs/tendermint-rpc": "^0.30.1",
+    "@subql/types": "^2.1.2",
+    "@subql/types-cosmos": "latest",
+    "@types/node": "^17.0.21",
+    "kafkajs": "^2.2.4",
+    "pino": "^7.8.0",
+    "ts-proto": "^1.112.1",
+    "tslib": "^2.3.1"
+  }
+}
