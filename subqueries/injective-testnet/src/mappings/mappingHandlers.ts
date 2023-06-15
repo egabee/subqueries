@@ -26,10 +26,11 @@ export async function handleTransferMessage(msg: CosmosMessage<TransferMsg>): Pr
   const recipient = msg.msg.decodedMsg.toAddress
 
   const amount = BigInt(msg.msg.decodedMsg.amount[0].amount)
+  const chainId = msg.block.header.chainId
 
   if (sender) {
-    const senderAccount = await getOrCreateAccount(sender)
-    const accountBalance = await decreaseAccountBalance(senderAccount, amount)
+    const senderAccount = await getOrCreateAccount(sender, chainId)
+    const accountBalance = await decreaseAccountBalance(senderAccount, amount, chainId)
     accountBalance.blockNumber = msg.block.header.height
     accountBalance.timestamp = getTimestamp(msg.block)
 
@@ -38,8 +39,8 @@ export async function handleTransferMessage(msg: CosmosMessage<TransferMsg>): Pr
   }
 
   if (recipient) {
-    const recipientAccount = await getOrCreateAccount(recipient)
-    const accountBalance = await increaseAccountBalance(recipientAccount, amount)
+    const recipientAccount = await getOrCreateAccount(recipient, chainId)
+    const accountBalance = await increaseAccountBalance(recipientAccount, amount, chainId)
     accountBalance.blockNumber = msg.block.header.height
     accountBalance.timestamp = getTimestamp(msg.block)
 
@@ -119,6 +120,7 @@ async function getOrCreateContractHourlySnapshot(
     hourlyGasConsumption: BIGINT_ZERO,
     blockNumber: BigInt(block.header.height),
     timestamp: getTimestamp(block),
+    chainId: block.header.chainId,
   })
 
   return newSnapshot
@@ -143,6 +145,7 @@ async function getOrCreateChainHourlySnapshot(
     hourlyTransactionCount: 0,
     blockNumber: BigInt(block.header.height),
     timestamp: getTimestamp(block),
+    chainId: block.header.chainId,
   })
 
   return newSnapshot

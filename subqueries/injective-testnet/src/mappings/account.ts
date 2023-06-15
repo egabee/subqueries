@@ -2,7 +2,7 @@ import { sendMessages } from '../common/kafka-producer'
 import { Account, AccountBalance, Contract } from '../types'
 import { ACCOUNT_BALANCE_TOPIC, BIGINT_ZERO, NEW_ACCOUNT_TOPIC } from '../common/constants'
 
-export async function getOrCreateAccount(accountId: string): Promise<Account> {
+export async function getOrCreateAccount(accountId: string, chainId: string): Promise<Account> {
   const account = await Account.get(accountId)
 
   if (account) {
@@ -11,6 +11,7 @@ export async function getOrCreateAccount(accountId: string): Promise<Account> {
 
   const newAccount = Account.create({
     id: accountId,
+    chainId,
   })
 
   sendMessages([newAccount], NEW_ACCOUNT_TOPIC)
@@ -19,6 +20,7 @@ export async function getOrCreateAccount(accountId: string): Promise<Account> {
 
 export async function getOrCreateAccountBalance(
   account: Account,
+  chainId: string,
   contract?: Contract,
 ): Promise<AccountBalance> {
   const previousBalance = await AccountBalance.get(account.id)
@@ -34,6 +36,7 @@ export async function getOrCreateAccountBalance(
     blockNumber: 0,
     timestamp: BIGINT_ZERO,
     contractId: contract?.id,
+    chainId,
   })
   return newBalance
 }
@@ -41,9 +44,10 @@ export async function getOrCreateAccountBalance(
 export async function decreaseAccountBalance(
   account: Account,
   amount: bigint,
+  chainId: string,
   contract?: Contract,
 ): Promise<AccountBalance> {
-  const balance = await getOrCreateAccountBalance(account, contract)
+  const balance = await getOrCreateAccountBalance(account, chainId, contract)
   balance.amount -= amount
   if (balance.amount < BIGINT_ZERO) {
     balance.amount = BIGINT_ZERO
@@ -56,9 +60,10 @@ export async function decreaseAccountBalance(
 export async function increaseAccountBalance(
   account: Account,
   amount: bigint,
+  chainId: string,
   contract?: Contract,
 ): Promise<AccountBalance> {
-  const balance = await getOrCreateAccountBalance(account, contract)
+  const balance = await getOrCreateAccountBalance(account, chainId, contract)
   balance.amount += amount
 
   sendMessages([balance], ACCOUNT_BALANCE_TOPIC)
