@@ -176,6 +176,8 @@ type AccountBalanceDailySnapshot @entity {
   " Current account balance "
   amount: BigInt!
 
+  denom: String!
+
   " Block number in which the balance was last modified "
   blockNumber: BigInt!
 

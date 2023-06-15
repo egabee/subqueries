@@ -24,28 +24,26 @@ type TransferMsg = {
 export async function handleTransferMessage(msg: CosmosMessage<TransferMsg>): Promise<void> {
   const sender = msg.msg.decodedMsg.fromAddress
   const recipient = msg.msg.decodedMsg.toAddress
-
-  const amount = BigInt(msg.msg.decodedMsg.amount[0].amount)
   const chainId = msg.block.header.chainId
 
-  if (sender) {
-    const senderAccount = await getOrCreateAccount(sender, chainId)
-    const accountBalance = await decreaseAccountBalance(senderAccount, amount, chainId)
-    accountBalance.blockNumber = msg.block.header.height
-    accountBalance.timestamp = getTimestamp(msg.block)
+  for (const { denom, amount } of msg.msg.decodedMsg.amount) {
+    const senderAccountId = sender + '-' + denom
+    const senderAccount = await getOrCreateAccount(senderAccountId, chainId)
+    const senderBalance = await decreaseAccountBalance(senderAccount, BigInt(amount), chainId)
+    senderBalance.blockNumber = msg.block.header.height
+    senderBalance.timestamp = getTimestamp(msg.block)
 
     await senderAccount.save()
-    await accountBalance.save()
-  }
+    await senderBalance.save()
 
-  if (recipient) {
-    const recipientAccount = await getOrCreateAccount(recipient, chainId)
-    const accountBalance = await increaseAccountBalance(recipientAccount, amount, chainId)
-    accountBalance.blockNumber = msg.block.header.height
-    accountBalance.timestamp = getTimestamp(msg.block)
+    const recipientAccountId = recipient + '-' + denom
+    const recipientAccount = await getOrCreateAccount(recipientAccountId, chainId)
+    const recipientBalance = await increaseAccountBalance(recipientAccount, BigInt(amount), chainId)
+    recipientBalance.blockNumber = msg.block.header.height
+    recipientBalance.timestamp = getTimestamp(msg.block)
 
     await recipientAccount.save()
-    await accountBalance.save()
+    await recipientBalance.save()
   }
 }
 
