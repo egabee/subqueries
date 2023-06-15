@@ -1,5 +1,5 @@
 import { ChainHourlySnapshot, Contract, ContractHourlySnapshot } from '../types'
-import { CosmosBlock, CosmosEvent, CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
+import { CosmosBlock, CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
 
 import { sendMessages } from '../common/kafka-producer'
 import { decreaseAccountBalance, getOrCreateAccount, increaseAccountBalance } from './account'

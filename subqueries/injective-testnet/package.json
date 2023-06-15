@@ -20,19 +20,6 @@
     "schema.graphql",
     "project.yaml"
   ],
-  "devDependencies": {
-    "@cosmjs/stargate": "^0.28.9",
-    "@subql/cli": "latest",
-    "@subql/node-cosmos": "^2.3.0",
-    "@subql/testing": "latest",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
-    "eslint": "^8.0.1",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.3.2",
-    "typescript": "^4.7.4"
-  },
   "dependencies": {
     "@cosmjs/tendermint-rpc": "^0.30.1",
     "@subql/types": "^2.1.2",

@@ -1,5 +1,5 @@
 import { Kafka } from 'kafkajs'
-import { toJson } from '../mappings/utils'
+import { toJson } from './utils'
 import {
   Account,
   AccountBalance,
