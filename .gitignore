@@ -3,6 +3,9 @@
 /*/proto/
 !/common/proto
 
+# Subquery generated models
+/subqueries/**/types/
+
 # Node artifact files
 node_modules/
 dist/
