@@ -11,6 +11,9 @@ pnpm i -g @subql/cli
 # install dependencies
 pnpm i
 
+# Copy proto definitions
+pnpm cp:proto
+
 # generate typescript types
 pnpm codegen
 

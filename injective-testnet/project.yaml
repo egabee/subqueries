@@ -24,23 +24,23 @@ network:
   # dictionary: "https://api.subquery.network/sq/subquery/injective-hub-dictionary"
   chainTypes: # This feature allows support for any Cosmos chain by importing the correct protobuf messages
     cosmos.bank.v1beta1:
-      file: ../proto/cosmos/bank/v1beta1/tx.proto
+      file: ./proto/cosmos/bank/v1beta1/tx.proto
       messages:
         - MsgSend
     cosmos.base.v1beta1.Coin:
-      file: ../proto/cosmos/base/v1beta1/coin.proto
+      file: ./proto/cosmos/base/v1beta1/coin.proto
       messages:
         - Coin
     injective.exchange.v1beta1.MsgCreateSpotLimitOrder: # Key is not used, it matches the one above and is inferred from the file
-      file: ../proto/injective/exchange/v1beta1/tx.proto
+      file: ./proto/injective/exchange/v1beta1/tx.proto
       messages:
         - MsgCreateSpotLimitOrder
     injective.exchange.v1beta1.SpotOrder:
-      file: ../proto/injective/exchange/v1beta1/exchange.proto
+      file: ./proto/injective/exchange/v1beta1/exchange.proto
       messages:
         - SpotOrder
     injective.wasmx.v1.MsgExecuteContractCompat:
-      file: ../proto/injective/wasmx/v1/tx.proto
+      file: ./proto/injective/wasmx/v1/tx.proto
       messages:
         - MsgExecuteContractCompat
 dataSources:
