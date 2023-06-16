@@ -35,6 +35,13 @@ network:
       file: ./proto/coreum/asset/ft/v1/tx.proto
       messages:
         - MsgIssue
+        - MsgMint
+        - MsgBurn
+        - MsgFreeze
+        - MsgUnfreeze
+        - MsgGloballyFreeze
+        - MsgGloballyUnfreeze
+        - MsgSetWhitelistedLimit
     coreum.asset.ft.v1.Token:
       file: ./proto/coreum/asset/ft/v1/token.proto
       messages:
@@ -44,14 +51,14 @@ network:
 
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 5978959
+    startBlock: 6793769
     mapping:
       file: ./dist/index.js
       handlers:
-        # Using block handlers slows your project down as they can be executed with each and every block. Only use if you need to
-        - handler: handleBlock
-          kind: cosmos/BlockHandler
-        - handler: handleTokenIssuance
+        # # Using block handlers slows your project down as they can be executed with each and every block. Only use if you need to
+        # - handler: handleBlock
+        #   kind: cosmos/BlockHandler
+        - handler: handleIssueMsg
           kind: cosmos/MessageHandler
           filter:
             type: /coreum.asset.ft.v1.MsgIssue
@@ -67,3 +74,31 @@ dataSources:
           kind: cosmos/MessageHandler
           filter:
             type: /cosmos.bank.v1beta1.MsgSend
+        - handler: handleMsgMint
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgMint
+        - handler: handleMsgBurn
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgBurn
+        - handler: handleMsgFreeze
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgFreeze
+        - handler: handleMsgUnfreeze
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgUnfreeze
+        - handler: handleMsgGloballyFreeze
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgGloballyFreeze
+        - handler: handleMsgGloballyUnfreeze
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgGloballyUnfreeze
+        - handler: handleMsgSetWhitelistedLimit
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.ft.v1.MsgSetWhitelistedLimit
