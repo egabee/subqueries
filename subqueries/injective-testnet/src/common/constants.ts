@@ -5,5 +5,5 @@ export const NEW_ACCOUNT_TOPIC = 'new-account'
 export const NEW_CONTRACT_TOPIC = 'new-contract'
 
 export const ACCOUNT_BALANCE_TOPIC = 'account-balance'
-export const CHAIN_HOURLY_SNAPSHOT_TOPIC = 'chain-hourly-snapshot'
-export const CONTRACT_HOURLY_SNAPSHOT_TOPIC = 'contract-hourly-snapshot'
+export const HOURLY_CHAIN_SNAPSHOT_TOPIC = 'hourly-chain-snapshot'
+export const HOURLY_CONTRACT_SNAPSHOT_TOPIC = 'hourly-contract-snapshot'

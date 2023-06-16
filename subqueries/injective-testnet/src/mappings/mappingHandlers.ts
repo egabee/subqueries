@@ -5,8 +5,8 @@ import { sendMessages } from '../common/kafka-producer'
 import { decreaseAccountBalance, getOrCreateAccount, increaseAccountBalance } from './account'
 import {
   BIGINT_ZERO,
-  CHAIN_HOURLY_SNAPSHOT_TOPIC,
-  CONTRACT_HOURLY_SNAPSHOT_TOPIC,
+  HOURLY_CHAIN_SNAPSHOT_TOPIC,
+  HOURLY_CONTRACT_SNAPSHOT_TOPIC,
   NEW_CONTRACT_TOPIC,
   MILLISECONDS_PER_HOUR,
 } from '../common/constants'
@@ -56,7 +56,7 @@ export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
   hourlySnapshot.hourlyGasConsumption += BigInt(tx.tx.gasUsed)
   hourlySnapshot.hourlyTransactionCount += 1
 
-  sendMessages([hourlySnapshot], CHAIN_HOURLY_SNAPSHOT_TOPIC)
+  sendMessages([hourlySnapshot], HOURLY_CHAIN_SNAPSHOT_TOPIC)
   await hourlySnapshot.save()
 }
 
@@ -79,7 +79,7 @@ export async function handleContractExecution(
   hourlySnapshot.hourlyGasConsumption += BigInt(msg.tx.tx.gasUsed)
   hourlySnapshot.hourlyFailedTransactionCount += msg.tx.tx.code === 0 ? 0 : 1
 
-  sendMessages([hourlySnapshot], CONTRACT_HOURLY_SNAPSHOT_TOPIC)
+  sendMessages([hourlySnapshot], HOURLY_CONTRACT_SNAPSHOT_TOPIC)
 
   await contract.save()
   await hourlySnapshot.save()
