@@ -9,8 +9,8 @@ import {
 } from '../types'
 
 const k = new Kafka({
-  brokers: ['159.89.10.196:19092', '159.89.10.196:29092', '159.89.10.196:39092'],
-  clientId: 'injective-producer-client',
+  brokers: ['104.248.248.241:19092', '104.248.248.241:29092', '104.248.248.241:39092'],
+  clientId: 'coreum-producer-client',
 })
 export const producer = k.producer({ allowAutoTopicCreation: true })
 
