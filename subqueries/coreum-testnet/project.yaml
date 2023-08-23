@@ -51,7 +51,7 @@ network:
 
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 6793769
+    startBlock: 10107730
     mapping:
       file: ./dist/index.js
       handlers:
