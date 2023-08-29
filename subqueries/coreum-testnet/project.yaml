@@ -51,13 +51,13 @@ network:
 
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 10107730
+    startBlock: 10410609
     mapping:
       file: ./dist/index.js
       handlers:
         # # Using block handlers slows your project down as they can be executed with each and every block. Only use if you need to
-        # - handler: handleBlock
-        #   kind: cosmos/BlockHandler
+        - handler: handleBlock
+          kind: cosmos/BlockHandler
         - handler: handleIssueMsg
           kind: cosmos/MessageHandler
           filter:

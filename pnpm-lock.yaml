@@ -36,10 +36,13 @@ importers:
         version: 2.1.2(@polkadot/api@10.9.1)
       '@subql/types-cosmos':
         specifier: latest
-        version: 2.2.0
+        version: 2.2.1
       '@types/node':
         specifier: ^17.0.21
         version: 17.0.21
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.3.1
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
@@ -765,6 +768,18 @@ packages:
       - utf-8-validate
     dev: false
 
+  /@subql/types-cosmos@2.2.1:
+    resolution: {integrity: sha512-ni/10F9b37F+2OKYoKLtXvDpat+KCctvagXRTFuMwFwBxpbgZdwCkIZzTROHUnO4a7vT3aZa8P5EoZbc6Xn1xw==}
+    dependencies:
+      '@cosmjs/cosmwasm-stargate': 0.30.1
+      '@cosmjs/proto-signing': 0.30.1
+      '@cosmjs/stargate': 0.30.1
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - utf-8-validate
+    dev: false
+
   /@subql/types@2.1.2(@polkadot/api@10.9.1):
     resolution: {integrity: sha512-CgM3FyJ/MCqjZXAna2kavOjoyp9vRgRB+aJZ1iS3CKWBLdGJVa7lLbbuh5AtFEnZmGdlGsUMh95QKXeUeS34Iw==}
     peerDependencies:
@@ -1112,6 +1127,11 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
+
+  /dotenv@16.3.1:
+    resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
+    engines: {node: '>=12'}
+    dev: false
 
   /duplexify@4.1.2:
     resolution: {integrity: sha512-fz3OjcNCHmRP12MJoZMPglx8m4rrFP8rovnk4vT8Fs+aonZoCwGg10dSsQsfP/E62eZcPTMSMP6686fu9Qlqtw==}

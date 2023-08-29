@@ -1,4 +1,4 @@
-import { sendMessages } from '../common/kafka-producer'
+import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { Account, AccountBalance, Contract } from '../types'
 import { ACCOUNT_BALANCE_TOPIC, BIGINT_ZERO, NEW_ACCOUNT_TOPIC } from '../common/constants'
 import { CosmosBlock } from '@subql/types-cosmos'
@@ -16,7 +16,7 @@ export async function getOrCreateAccount(accountId: string, chainId: string): Pr
     chainId,
   })
 
-  sendMessages([newAccount], NEW_ACCOUNT_TOPIC)
+  await sendBatchOfMessagesToKafka([newAccount], NEW_ACCOUNT_TOPIC)
   return newAccount
 }
 
@@ -60,7 +60,7 @@ export async function decreaseAccountBalance(
   balance.blockNumber = block.header.height
   balance.timestamp = getTimestamp(block)
 
-  sendMessages([balance], ACCOUNT_BALANCE_TOPIC)
+  await sendBatchOfMessagesToKafka([balance], ACCOUNT_BALANCE_TOPIC)
 
   return balance
 }
@@ -77,7 +77,7 @@ export async function increaseAccountBalance(
   balance.blockNumber = block.header.height
   balance.timestamp = getTimestamp(block)
 
-  sendMessages([balance], ACCOUNT_BALANCE_TOPIC)
+  await sendBatchOfMessagesToKafka([balance], ACCOUNT_BALANCE_TOPIC)
 
   return balance
 }

@@ -5,9 +5,9 @@ import {
   HOURLY_CHAIN_SNAPSHOT_TOPIC,
   MILLISECONDS_PER_HOUR,
 } from '../common/constants'
-import { sendMessages } from '../common/kafka-producer'
+import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { getTimestamp } from '../common/utils'
-import { ContractHourlySnapshot, Contract, ChainHourlySnapshot } from '../types'
+import { ChainHourlySnapshot } from '../types'
 import { decreaseAccountBalance, getOrCreateAccount, increaseAccountBalance } from './account'
 
 export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
@@ -19,7 +19,7 @@ export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
   hourlySnapshot.hourlyGasConsumption += BigInt(tx.tx.gasUsed)
   hourlySnapshot.hourlyTransactionCount += 1
 
-  sendMessages([hourlySnapshot], HOURLY_CHAIN_SNAPSHOT_TOPIC)
+  await sendBatchOfMessagesToKafka([hourlySnapshot], HOURLY_CHAIN_SNAPSHOT_TOPIC)
   await hourlySnapshot.save()
 }
 

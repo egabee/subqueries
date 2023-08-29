@@ -8,11 +8,24 @@ import {
   ContractHourlySnapshot,
 } from '../types'
 
-const k = new Kafka({
-  brokers: ['104.248.248.241:19092', '104.248.248.241:29092', '104.248.248.241:39092'],
+const kafka = new Kafka({
+  brokers: process.env.KAFKA_BROKERS?.split(',') || [],
   clientId: 'coreum-producer-client',
 })
-export const producer = k.producer({ allowAutoTopicCreation: true })
+
+const producer = kafka.producer({ allowAutoTopicCreation: true })
+let producerConnected = false
+async function connectProducer(): Promise<void> {
+  await producer.connect()
+  producerConnected = true
+}
+
+//eslint-disable-next-line
+async function disconnectProducer(): Promise<void> {
+  await producer.disconnect()
+}
+
+connectProducer()
 
 type MessageType =
   | Account
@@ -20,23 +33,32 @@ type MessageType =
   | AccountBalance
   | ContractHourlySnapshot
   | ChainHourlySnapshot
+  | { height: number }
 
 /**
- * Send a batch of messages to kafka
- * @param messages
- * @param topic
+ * Send a batch of messages to Kafka
+ * @param messages - An array of messages to send
+ * @param topic - The topic to send the messages to
  */
-export function sendMessages(messages: MessageType[], topic: string): void {
-  const msgs = messages.map((m) => ({ value: toJson(m) }))
-  producer
-    .connect()
-    .then(() => {
-      producer
-        .send({ messages: msgs, topic })
-        // .then((record) => logger.info(`record: ${JSON.stringify(record)}`))
-        .catch((err) =>
-          logger.error(`failed to send message to kafka. reason: ${JSON.stringify(err)}`),
-        )
-    })
-    .catch((err) => logger.error(`failed to connect kafka. reason: ${JSON.stringify(err)}`))
+export async function sendBatchOfMessagesToKafka(
+  messages: MessageType[],
+  topic: string,
+): Promise<void> {
+  const messageValues = messages.map((message) => ({ value: toJson(message) }))
+
+  if (!producerConnected) {
+    await connectProducer()
+  }
+
+  try {
+    const messageResults = await producer.send({ messages: messageValues, topic })
+    const failedMessages = messageResults.filter((messageResult) => messageResult.errorCode !== 0)
+
+    if (failedMessages.length) {
+      logger.error(`Error pushing ${failedMessages.length} messages to Kafka`)
+    }
+  } catch (error) {
+    logger.error(`Error pushing batch of messages to Kafka: ${JSON.stringify(error)}`)
+    throw error // Rethrow the error for better visibility at the caller level
+  }
 }

@@ -1,6 +1,6 @@
 import { CosmosBlock, CosmosMessage } from '@subql/types-cosmos'
 import { Contract, ContractHourlySnapshot } from '../types'
-import { sendMessages } from '../common/kafka-producer'
+import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import {
   BIGINT_ZERO,
   HOURLY_CONTRACT_SNAPSHOT_TOPIC,
@@ -34,7 +34,7 @@ export async function handleIssueMsg(msg: CosmosMessage<IssueMsg>): Promise<void
   snapshot.hourlyFailedTransactionCount += increaseFailedTransactionBy(msg.tx.tx.code)
   snapshot.hourlyGasConsumption += BigInt(msg.tx.tx.gasUsed)
 
-  sendMessages([snapshot], HOURLY_CONTRACT_SNAPSHOT_TOPIC)
+  await sendBatchOfMessagesToKafka([snapshot], HOURLY_CONTRACT_SNAPSHOT_TOPIC)
 
   await snapshot.save()
   await token.save()
@@ -172,7 +172,7 @@ export async function getOrCreateContract(
   const newContract = new Contract(address, chainId)
   newContract.name = name
 
-  sendMessages([newContract], NEW_CONTRACT_TOPIC)
+  await sendBatchOfMessagesToKafka([newContract], NEW_CONTRACT_TOPIC)
 
   return newContract
 }
