@@ -19,7 +19,9 @@ export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
   hourlySnapshot.hourlyGasConsumption += BigInt(tx.tx.gasUsed)
   hourlySnapshot.hourlyTransactionCount += 1
 
-  await sendBatchOfMessagesToKafka([hourlySnapshot], HOURLY_CHAIN_SNAPSHOT_TOPIC)
+  await sendBatchOfMessagesToKafka([
+    { messages: [hourlySnapshot], topic: HOURLY_CHAIN_SNAPSHOT_TOPIC },
+  ])
   await hourlySnapshot.save()
 }
 

@@ -1,7 +1,9 @@
 import { CosmosBlock } from '@subql/types-cosmos'
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
-import { NEW_BLOCK } from '../common/constants'
+import { NEW_BLOCK_TOPIC } from '../common/constants'
 
 export async function handleBlock(block: CosmosBlock): Promise<void> {
-  await sendBatchOfMessagesToKafka([{ height: block.block.header.height }], NEW_BLOCK)
+  await sendBatchOfMessagesToKafka([
+    { messages: [{ height: block.block.header.height }], topic: NEW_BLOCK_TOPIC },
+  ])
 }
