@@ -1,5 +1,5 @@
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
-import { Account, AccountBalance, Contract } from '../types'
+import { Account, AccountBalance } from '../types'
 import { ACCOUNT_BALANCE_TOPIC, BIGINT_ZERO, NEW_ACCOUNT_TOPIC } from '../common/constants'
 import { CosmosBlock } from '@subql/types-cosmos'
 import { getTimestamp } from '../common/utils'
@@ -16,14 +16,14 @@ export async function getOrCreateAccount(accountId: string, chainId: string): Pr
     chainId,
   })
 
-  await sendBatchOfMessagesToKafka([newAccount], NEW_ACCOUNT_TOPIC)
+  await sendBatchOfMessagesToKafka([{ messages: [newAccount], topic: NEW_ACCOUNT_TOPIC }])
+
   return newAccount
 }
 
 export async function getOrCreateAccountBalance(
   account: Account,
   block: CosmosBlock,
-  contract?: Contract,
 ): Promise<AccountBalance> {
   const previousBalance = await AccountBalance.get(account.id)
 
@@ -37,10 +37,10 @@ export async function getOrCreateAccountBalance(
     amount: BIGINT_ZERO,
     blockNumber: block.header.height,
     timestamp: getTimestamp(block),
-    contractId: contract?.id,
     chainId,
     denom: '',
   })
+
   return newBalance
 }
 
@@ -48,9 +48,8 @@ export async function decreaseAccountBalance(
   account: Account,
   coin: { amount: string; denom: string },
   block: CosmosBlock,
-  contract?: Contract,
 ): Promise<AccountBalance> {
-  const balance = await getOrCreateAccountBalance(account, block, contract)
+  const balance = await getOrCreateAccountBalance(account, block)
   balance.amount -= BigInt(coin.amount)
   balance.denom = coin.denom
 
@@ -60,7 +59,7 @@ export async function decreaseAccountBalance(
   balance.blockNumber = block.header.height
   balance.timestamp = getTimestamp(block)
 
-  await sendBatchOfMessagesToKafka([balance], ACCOUNT_BALANCE_TOPIC)
+  await sendBatchOfMessagesToKafka([{ messages: [balance], topic: ACCOUNT_BALANCE_TOPIC }])
 
   return balance
 }
@@ -69,15 +68,14 @@ export async function increaseAccountBalance(
   account: Account,
   coin: { denom: string; amount: string },
   block: CosmosBlock,
-  contract?: Contract,
 ): Promise<AccountBalance> {
-  const balance = await getOrCreateAccountBalance(account, block, contract)
+  const balance = await getOrCreateAccountBalance(account, block)
   balance.amount += BigInt(coin.amount)
   balance.denom = coin.denom
   balance.blockNumber = block.header.height
   balance.timestamp = getTimestamp(block)
 
-  await sendBatchOfMessagesToKafka([balance], ACCOUNT_BALANCE_TOPIC)
+  await sendBatchOfMessagesToKafka([{ messages: [balance], topic: ACCOUNT_BALANCE_TOPIC }])
 
   return balance
 }
