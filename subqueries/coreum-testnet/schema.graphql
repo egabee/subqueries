@@ -23,9 +23,6 @@ type ChainHourlySnapshot @entity {
 
   " Timestamp of this snapshot "
   timestamp: BigInt!
-
-  " Chain id of the blockchain "
-  chainId: String!
 }
 
 #############################
@@ -38,9 +35,6 @@ type Contract @entity {
 
   " Name of the smart contract "
   name: String
-
-  " Chain id of the blockchain "
-  chainId: String!
 
   transfers: [TransferEvent!] @derivedFrom(field: "contract")
 }
@@ -70,9 +64,6 @@ type ContractHourlySnapshot @entity {
 
   " Timestamp of this snapshot "
   timestamp: BigInt!
-
-  " Chain id of the blockchain "
-  chainId: String!
 }
 
 ##################################
@@ -106,22 +97,16 @@ type TransferEvent @entity {
 
   " Timestamp of this event "
   timestamp: BigInt!
-
-  " Chain id of the blockchain "
-  chainId: String!
 }
 
 ##################################
 ######## Account MetaData ########
 ##################################
 
-" An account is a unique injective address "
+" An account is a unique address "
 type Account @entity {
   " Address of the account "
   id: ID!
-
-  " Chain id of the blockchain "
-  chainId: String!
 
   " Token transfers to this account "
   transferTo: [TransferEvent!]! @derivedFrom(field: "to")
@@ -146,16 +131,11 @@ type AccountBalance @entity {
   " Current account balance "
   amount: BigInt!
 
-  denom: String!
-
   " Block number in which the balance was last modified "
   blockNumber: Int!
 
   "Timestamp in which the balance was last modified "
   timestamp: BigInt!
-
-  " Chain id of the blockchain "
-  chainId: String!
 }
 
 ###############################
@@ -169,8 +149,8 @@ type AccountBalanceDailySnapshot @entity {
   " Account address "
   account: Account!
 
-  " Contract address "
-  token: Contract
+  " Token address "
+  token: Token!
 
   " Current account balance "
   amount: BigInt!
@@ -180,9 +160,6 @@ type AccountBalanceDailySnapshot @entity {
 
   " Timestamp in which the balance was last modified "
   timestamp: BigInt!
-
-  " Chain id of the blockchain "
-  chainId: String!
 }
 
 " Represents a token entity. "

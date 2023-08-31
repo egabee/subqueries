@@ -4,17 +4,13 @@ import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { Contract, ContractHourlySnapshot } from '../types'
 import { getTimestamp } from '../common/utils'
 
-async function getOrCreateContract(
-  address: string,
-  chainId: string,
-  name?: string,
-): Promise<Contract> {
+async function getOrCreateContract(address: string, name?: string): Promise<Contract> {
   const contract = await Contract.get(address)
   if (contract) {
     return contract
   }
 
-  const newContract = new Contract(address, chainId)
+  const newContract = new Contract(address)
   newContract.name = name
 
   await sendBatchOfMessagesToKafka([{ messages: [newContract], topic: NEW_CONTRACT_TOPIC }])
@@ -42,7 +38,6 @@ async function getOrCreateContractHourlySnapshot(
     hourlyGasConsumption: BIGINT_ZERO,
     blockNumber: BigInt(block.header.height),
     timestamp: getTimestamp(block),
-    chainId: block.header.chainId,
   })
 
   return newSnapshot
