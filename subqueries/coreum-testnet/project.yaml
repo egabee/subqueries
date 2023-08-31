@@ -70,7 +70,7 @@ dataSources:
         #     type: transfer
         #     messageFilter:
         #       type: /cosmos.bank.v1beta1.MsgSend
-        - handler: handleTransferMessage
+        - handler: handleMsgSend
           kind: cosmos/MessageHandler
           filter:
             type: /cosmos.bank.v1beta1.MsgSend
