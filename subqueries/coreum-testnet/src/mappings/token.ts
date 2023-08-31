@@ -59,12 +59,8 @@ export async function handleIssueMsg(msg: CosmosMessage<IssueMsg>): Promise<void
   token.sendCommissionRate = sendCommissionRate
   token.totalSupply = BigInt(initialAmount)
 
-  const account = await getOrCreateAccount(issuer, chainId)
-  const balance = await increaseAccountBalance(
-    account,
-    { denom: tokenId, amount: initialAmount },
-    msg.block,
-  )
+  const account = await getOrCreateAccount(issuer)
+  const balance = await increaseAccountBalance(account, initialAmount, msg.block)
 
   const snapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
 
@@ -86,15 +82,15 @@ export async function handleMsgMint(msg: CosmosMessage<MsgMint>): Promise<void> 
   }
 
   const { coin, sender } = msg.msg.decodedMsg
-  const { chainId, height } = msg.block.header
+  const { height } = msg.block.header
 
   const token = await getOrCreateToken(coin.denom)
   token.mintCount += BIGINT_ONE
   token.totalMinted += BigInt(coin.amount)
   token.totalSupply += BigInt(coin.amount)
 
-  const account = await getOrCreateAccount(sender, chainId)
-  const balance = await increaseAccountBalance(account, coin, msg.block)
+  const account = await getOrCreateAccount(sender)
+  const balance = await increaseAccountBalance(account, coin.amount, msg.block)
   balance.blockNumber = height
   balance.timestamp = getTimestamp(msg.block)
 
@@ -133,16 +129,19 @@ export async function handleMsgBurn(msg: CosmosMessage<MsgBurn>): Promise<void> 
     return
   }
 
-  const { coin, sender } = msg.msg.decodedMsg
-  const { chainId, height } = msg.block.header
+  const {
+    coin: { amount, denom },
+    sender,
+  } = msg.msg.decodedMsg
+  const { height } = msg.block.header
 
-  const token = await getOrCreateToken(coin.denom)
+  const token = await getOrCreateToken(denom)
   token.burnCount += BIGINT_ONE
-  token.totalBurned += BigInt(coin.amount)
-  token.totalSupply -= BigInt(coin.amount)
+  token.totalBurned += BigInt(amount)
+  token.totalSupply -= BigInt(amount)
 
-  const account = await getOrCreateAccount(sender, chainId)
-  const balance = await decreaseAccountBalance(account, coin, msg.block)
+  const account = await getOrCreateAccount(sender)
+  const balance = await decreaseAccountBalance(account, amount, msg.block)
   balance.blockNumber = height
   balance.timestamp = getTimestamp(msg.block)
 
@@ -150,7 +149,7 @@ export async function handleMsgBurn(msg: CosmosMessage<MsgBurn>): Promise<void> 
   dailySnapshot.dailyTotalSupply = token.totalSupply
   dailySnapshot.dailyEventCount += 1
   dailySnapshot.dailyBurnCount += 1
-  dailySnapshot.dailyBurnAmount += BigInt(coin.amount)
+  dailySnapshot.dailyBurnAmount += BigInt(amount)
   dailySnapshot.blockNumber = BigInt(height)
   dailySnapshot.timestamp = getTimestamp(msg.block)
 
@@ -158,7 +157,7 @@ export async function handleMsgBurn(msg: CosmosMessage<MsgBurn>): Promise<void> 
   hourlySnapshot.hourlyTotalSupply = token.totalSupply
   hourlySnapshot.hourlyEventCount += 1
   hourlySnapshot.hourlyBurnCount += 1
-  hourlySnapshot.hourlyBurnAmount += BigInt(coin.amount)
+  hourlySnapshot.hourlyBurnAmount += BigInt(amount)
   hourlySnapshot.blockNumber = BigInt(height)
   hourlySnapshot.timestamp = getTimestamp(msg.block)
 
@@ -181,11 +180,13 @@ export async function handleMsgFreeze(msg: CosmosMessage<MsgFreeze>): Promise<vo
     return
   }
 
-  const { coin } = msg.msg.decodedMsg
+  const {
+    coin: { amount, denom },
+  } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(coin.denom)
-  token.frozenAmount += BigInt(coin.amount)
+  const token = await getOrCreateToken(denom)
+  token.frozenAmount += BigInt(amount)
 
   const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
   dailySnapshot.dailyEventCount += 1
@@ -216,11 +217,13 @@ export async function handleMsgUnfreeze(msg: CosmosMessage<MsgUnfreeze>): Promis
     return
   }
 
-  const { coin } = msg.msg.decodedMsg
+  const {
+    coin: { amount, denom },
+  } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(coin.denom)
-  token.frozenAmount -= BigInt(coin.amount)
+  const token = await getOrCreateToken(denom)
+  token.frozenAmount -= BigInt(amount)
 
   const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
   dailySnapshot.dailyEventCount += 1

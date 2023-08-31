@@ -4,7 +4,7 @@ import { ACCOUNT_BALANCE_TOPIC, BIGINT_ZERO, NEW_ACCOUNT_TOPIC } from '../common
 import { CosmosBlock } from '@subql/types-cosmos'
 import { getTimestamp } from '../common/utils'
 
-export async function getOrCreateAccount(accountId: string, chainId: string): Promise<Account> {
+export async function getOrCreateAccount(accountId: string): Promise<Account> {
   const account = await Account.get(accountId)
 
   if (account) {
@@ -13,7 +13,6 @@ export async function getOrCreateAccount(accountId: string, chainId: string): Pr
 
   const newAccount = Account.create({
     id: accountId,
-    chainId,
   })
 
   await sendBatchOfMessagesToKafka([{ messages: [newAccount], topic: NEW_ACCOUNT_TOPIC }])
@@ -37,8 +36,6 @@ export async function getOrCreateAccountBalance(
     amount: BIGINT_ZERO,
     blockNumber: block.header.height,
     timestamp: getTimestamp(block),
-    chainId,
-    denom: '',
   })
 
   return newBalance
@@ -46,12 +43,11 @@ export async function getOrCreateAccountBalance(
 
 export async function decreaseAccountBalance(
   account: Account,
-  coin: { amount: string; denom: string },
+  amount: string,
   block: CosmosBlock,
 ): Promise<AccountBalance> {
   const balance = await getOrCreateAccountBalance(account, block)
-  balance.amount -= BigInt(coin.amount)
-  balance.denom = coin.denom
+  balance.amount -= BigInt(amount)
 
   if (balance.amount < BIGINT_ZERO) {
     balance.amount = BIGINT_ZERO
@@ -66,12 +62,11 @@ export async function decreaseAccountBalance(
 
 export async function increaseAccountBalance(
   account: Account,
-  coin: { denom: string; amount: string },
+  amount: string,
   block: CosmosBlock,
 ): Promise<AccountBalance> {
   const balance = await getOrCreateAccountBalance(account, block)
-  balance.amount += BigInt(coin.amount)
-  balance.denom = coin.denom
+  balance.amount += BigInt(amount)
   balance.blockNumber = block.header.height
   balance.timestamp = getTimestamp(block)
 
