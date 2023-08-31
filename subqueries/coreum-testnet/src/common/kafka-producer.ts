@@ -6,6 +6,9 @@ import {
   ChainHourlySnapshot,
   Contract,
   ContractHourlySnapshot,
+  Token,
+  TokenDailySnapshot,
+  TokenHourlySnapshot,
 } from '../types'
 
 const kafka = new Kafka({
@@ -34,28 +37,36 @@ type MessageType =
   | ContractHourlySnapshot
   | ChainHourlySnapshot
   | { height: number }
+  | TokenHourlySnapshot
+  | Token
+  | TokenDailySnapshot
+
+interface TopicMessages {
+  topic: string
+  messages: MessageType[]
+}
 
 /**
  * Send a batch of messages to Kafka
  * @param messages - An array of messages to send
  * @param topic - The topic to send the messages to
  */
-export async function sendBatchOfMessagesToKafka(
-  messages: MessageType[],
-  topic: string,
-): Promise<void> {
-  const messageValues = messages.map((message) => ({ value: toJson(message) }))
-
+export async function sendBatchOfMessagesToKafka(topicMessages: TopicMessages[]): Promise<void> {
   if (!producerConnected) {
     await connectProducer()
   }
 
   try {
-    const messageResults = await producer.send({ messages: messageValues, topic })
-    const failedMessages = messageResults.filter((messageResult) => messageResult.errorCode !== 0)
+    for (const { topic, messages } of topicMessages) {
+      const messageResults = await producer.send({
+        messages: messages.map((message) => ({ value: toJson(message) })),
+        topic,
+      })
+      const failedMessages = messageResults.filter((messageResult) => messageResult.errorCode !== 0)
 
-    if (failedMessages.length) {
-      logger.error(`Error pushing ${failedMessages.length} messages to Kafka`)
+      if (failedMessages.length) {
+        logger.error(`Error pushing ${failedMessages.length} messages to Kafka`)
+      }
     }
   } catch (error) {
     logger.error(`Error pushing batch of messages to Kafka: ${JSON.stringify(error)}`)
