@@ -137,14 +137,11 @@ type Account @entity {
 }
 
 type AccountBalance @entity {
-  " { Address Of the Account }-{ Address of the Token if any} "
+  " { Address Of the Account }-{ Denom of the Token if any } "
   id: ID!
 
   " Account address "
   account: Account!
-
-  " Contract address if any "
-  contract: Contract
 
   " Current account balance "
   amount: BigInt!
@@ -188,69 +185,163 @@ type AccountBalanceDailySnapshot @entity {
   chainId: String!
 }
 
-## To be deleted
+" Represents a token entity. "
+type Token @entity {
+  " { subunit }-{ Address of the token issuer } "
+  id: ID!
 
-# type Block @entity {
-#   id: ID! # The block hash
-#   height: BigInt!
-# }
+  " Address of the token issuer. "
+  issuer: String!
 
-# type Transaction @entity {
-#   "{blockHeight}-{index in block}"
-#   id: ID!
+  " The symbol representing the token. "
+  symbol: String!
 
-#   "Block height that we inserted in database"
-#   blockHeight: Int!
+  " The subunit of the token. "
+  subunit: String!
 
-#   "Block timestamp"
-#   timestamp: BigInt!
+  " The precision level for the token. "
+  precision: Int!
 
-#   "success or failed"
-#   status: String!
+  " The initial amount of the token. "
+  initialAmount: String!
 
-#   "Chain id i.e injective-1"
-#   chainId: String!
+  " A description of the token. "
+  description: String
 
-#   "Amount of gas being used at tx execution"
-#   gasUsed: BigInt!
-# }
+  " Features associated with the token. "
+  features: String!
 
-# type Message @entity {
-#   id: ID!
-#   blockHeight: Int!
-#   txHash: String!
-#   from: String!
-#   to: String!
-#   amount: String!
-#   chainId: String!
-# }
+  " The burn rate for the token. "
+  burnRate: String!
 
-# type Token @entity {
-#   "{subunit}-{issuer}"
-#   id: ID!
-#   issuer: String!
-#   symbol: String!
-#   subunit: String!
-#   precision: Int!
-#   initialAmount: String!
-#   description: String!
-#   features: String!
-#   burnRate: String!
-#   sendCommissionRate: String!
-#   chainId: String!
-#   timestamp: BigInt!
-# }
+  frozenAmount: BigInt!
 
-# type TokenTransfer @entity {
-#   id: ID!
-#   blockHeight: Int!
-#   timestamp: BigInt!
-#   txHash: String!
-#   from: String!
-#   to: String!
-#   amount: String!
-#   chainId: String!
-#   token: Token!
-#   gasUsed: BigInt!
-#   status: String!
-# }
+  globallyFrozen: Boolean!
+
+  " The send commission rate for the token. "
+  sendCommissionRate: String!
+
+  " Total number of unique token holders who are currently holding more the token "
+  currentHolderCount: BigInt!
+
+  " Total number of cumulative unique token holders who held or are holding the token "
+  cumulativeHolderCount: BigInt!
+
+  " Total number of token transfer events "
+  transferCount: BigInt!
+
+  " Total number of token mint events "
+  mintCount: BigInt!
+
+  " Total number of token burn events "
+  burnCount: BigInt!
+
+  " Total token supply "
+  totalSupply: BigInt!
+
+  " Total token burned "
+  totalBurned: BigInt!
+
+  " Total token minted "
+  totalMinted: BigInt!
+}
+
+###############################
+####### Token Timeseries ######
+###############################
+
+type TokenDailySnapshot @entity {
+  " { Token Address }-{ # of days since Unix epoch time } "
+  id: ID!
+
+  " Token this snapshot is associated with "
+  token: Token!
+
+  " Daily total Supply of the token "
+  dailyTotalSupply: BigInt!
+
+  " number of accounts holding the token "
+  currentHolderCount: BigInt!
+
+  " number of cumulative unique holders "
+  cumulativeHolderCount: BigInt!
+
+  frozenAccountCount: Int!
+
+  whiteListedAccountCount: Int!
+
+  " Total number of events occurred in a day "
+  dailyEventCount: Int!
+
+  " Total number of transfers in a day "
+  dailyTransferCount: Int!
+
+  " Total number of token transfered in a day "
+  dailyTransferAmount: BigInt!
+
+  " Total number of mints in a day "
+  dailyMintCount: Int!
+
+  " Total number of token minted in a day "
+  dailyMintAmount: BigInt!
+
+  " Total number of burns in a day "
+  dailyBurnCount: Int!
+
+  " Total number of token burnt in a day "
+  dailyBurnAmount: BigInt!
+
+  " Block number of this snapshot "
+  blockNumber: BigInt!
+
+  " Timestamp of this snapshot "
+  timestamp: BigInt!
+}
+
+type TokenHourlySnapshot @entity {
+  " { Token Denom }-{ # of hours since Unix epoch time } "
+  id: ID!
+
+  " Token this snapshot is associated with "
+  token: Token!
+
+  " Hourly total Supply of the token "
+  hourlyTotalSupply: BigInt!
+
+  " number of accounts holding this token "
+  currentHolderCount: BigInt!
+
+  " number of cumulative unique holders "
+  cumulativeHolderCount: BigInt!
+
+  frozenAccountCount: Int!
+
+  whiteListedAccountCount: Int!
+
+  " Total number of events occurred in an hour "
+  hourlyEventCount: Int!
+
+  " Total number of transfers in a hour "
+  hourlyTransferCount: Int!
+
+  " Total amount of token transfered in a hour "
+  hourlyTransferAmount: BigInt!
+
+  " Total number of mints in a hour "
+  hourlyMintCount: Int!
+
+  " Total amount of token minted in a hour "
+  hourlyMintAmount: BigInt!
+
+  " Total number of burns in a hour "
+  hourlyBurnCount: Int!
+
+  " Total number of token burnt in a hour "
+  hourlyBurnAmount: BigInt!
+
+  " Block number of this snapshot "
+  blockNumber: BigInt!
+
+  " Timestamp of this snapshot "
+  timestamp: BigInt!
+}
