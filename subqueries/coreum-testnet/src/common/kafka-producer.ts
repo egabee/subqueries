@@ -59,7 +59,9 @@ export async function sendBatchOfMessagesToKafka(topicMessages: TopicMessages[])
   try {
     for (const { topic, messages } of topicMessages) {
       const messageResults = await producer.send({
-        messages: messages.map((message) => ({ value: toJson(message) })),
+        messages: messages.map((message) => ({
+          value: toJson({ ...message, chainId: process.env.CHAIN_ID }),
+        })),
         topic,
       })
       const failedMessages = messageResults.filter((messageResult) => messageResult.errorCode !== 0)
