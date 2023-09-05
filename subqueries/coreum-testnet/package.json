@@ -26,9 +26,13 @@
     "@subql/types-cosmos": "latest",
     "@types/node": "^17.0.45",
     "dotenv": "^16.3.1",
+    "is-base64": "^1.1.0",
     "kafkajs": "^2.2.4",
     "pino": "^7.11.0",
     "ts-proto": "^1.156.7",
     "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/is-base64": "^1.1.1"
   }
 }

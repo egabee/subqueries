@@ -36,7 +36,7 @@ type Contract @entity {
   " Name of the smart contract "
   name: String
 
-  transfers: [TransferEvent!] @derivedFrom(field: "contract")
+  # transfers: [TransferEvent!] @derivedFrom(field: "contract")
 }
 
 ###############################
@@ -67,35 +67,44 @@ type ContractHourlySnapshot @entity {
 }
 
 ##################################
-######## Event-Level Data ########
+##### Transaction-Level Data #####
 ##################################
 
-type TransferEvent @entity {
-  " { Chain ID }-{ Transaction hash }-{ Log index } "
+type EventAttribute @jsonField {
+  key: String!
+  value: String!
+}
+
+type EventLog @jsonField {
+  type: String!
+  attributes: [EventAttribute!]!
+}
+
+type Transaction @entity {
+  " Transaction Hash "
   id: ID!
 
-  " Transaction hash of the transaction that emitted this event "
-  hash: String!
+  " The token this transaction belongs to "
+  token: Token
 
-  " Event log index "
-  logIndex: Int!
+  " Events emitted from the transaction "
+  events: [EventLog]
 
-  " The contract this event belongs to if it's a contract event "
-  contract: Contract
+  " Messages included in transaction body - saved as json string "
+  messages: [String]
 
-  " Quantity of the tokens transferred "
-  amount: BigInt!
+  log: String
 
-  " Account that sent the tokens "
-  from: Account!
+  success: Boolean!
 
-  " Account that received the tokens "
-  to: Account!
+  gasUsed: BigInt!
 
-  " Block number of this event "
-  blockNumber: BigInt!
+  gasWanted: BigInt!
 
-  " Timestamp of this event "
+  " Block number in which the balance was last modified "
+  blockNumber: Int!
+
+  "Timestamp in which the balance was last modified "
   timestamp: BigInt!
 }
 
@@ -108,11 +117,11 @@ type Account @entity {
   " Address of the account "
   id: ID!
 
-  " Token transfers to this account "
-  transferTo: [TransferEvent!]! @derivedFrom(field: "to")
+  # " Token transfers to this account "
+  # transferTo: [TransferEvent!]! @derivedFrom(field: "to")
 
-  " Token transfers from this account "
-  transferFrom: [TransferEvent!]! @derivedFrom(field: "from")
+  # " Token transfers from this account "
+  # transferFrom: [TransferEvent!]! @derivedFrom(field: "from")
 
   " Token balances that this account holds "
   balances: [AccountBalance!]! @derivedFrom(field: "account")
@@ -221,6 +230,9 @@ type Token @entity {
 
   " Total token minted "
   totalMinted: BigInt!
+
+  " List of token transfers "
+  transfers: [Transaction!]! @derivedFrom(field: "token")
 }
 
 ###############################

@@ -1,6 +1,6 @@
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { Account, AccountBalance } from '../types'
-import { ACCOUNT_BALANCE_TOPIC, BIGINT_ZERO, NEW_ACCOUNT_TOPIC } from '../common/constants'
+import { ACCOUNT_BALANCE_TOPIC, BIGINT_ZERO } from '../common/constants'
 import { CosmosBlock } from '@subql/types-cosmos'
 import { getTimestamp } from '../common/utils'
 
@@ -14,8 +14,6 @@ export async function getOrCreateAccount(accountId: string): Promise<Account> {
   const newAccount = Account.create({
     id: accountId,
   })
-
-  await sendBatchOfMessagesToKafka([{ messages: [newAccount], topic: NEW_ACCOUNT_TOPIC }])
 
   return newAccount
 }

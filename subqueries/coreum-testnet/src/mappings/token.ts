@@ -10,10 +10,9 @@ import {
   MsgSetWhitelistedLimit,
   MsgUnfreeze,
 } from './coreum-types'
-
 import { Token, TokenDailySnapshot, TokenHourlySnapshot } from '../types'
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
-import { getTimestamp, isTransactionSuccessful } from '../common/utils'
+import { getTimestamp, toJson } from '../common/utils'
 import {
   ACCOUNT_BALANCE_TOPIC,
   BIGINT_ONE,
@@ -21,19 +20,17 @@ import {
   EMPTY_STRING,
   MILLISECONDS_PER_HOUR,
   MILLISECONDS_PER_DAY,
-  NEW_TOKEN_TOPIC,
+  TOKEN_TOPIC,
   TOKEN_HOURLY_SNAPSHOT_TOPIC,
   TOKEN_DAILY_SNAPSHOT_TOPIC,
   TOKEN_UPDATE_TOPIC,
+  TRANSACTION_TOPIC,
+  ACCOUNT_TOPIC,
 } from '../common/constants'
 import { decreaseAccountBalance, getOrCreateAccount, increaseAccountBalance } from './account'
+import { upsertTransaction } from './tx'
 
 export async function handleIssueMsg(msg: CosmosMessage<IssueMsg>): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
   const {
     subunit,
     issuer,
@@ -48,13 +45,14 @@ export async function handleIssueMsg(msg: CosmosMessage<IssueMsg>): Promise<void
 
   const tokenId = subunit + '-' + issuer
   const token = await getOrCreateToken(tokenId)
+
   token.issuer = issuer
   token.symbol = symbol
   token.subunit = subunit
   token.precision = precision
   token.initialAmount = initialAmount
   token.description = description
-  token.features = features.reduce((p, c) => p + ',' + c)
+  token.features = features.join()
   token.burnRate = burnRate
   token.sendCommissionRate = sendCommissionRate
   token.totalSupply = BigInt(initialAmount)
@@ -62,304 +60,348 @@ export async function handleIssueMsg(msg: CosmosMessage<IssueMsg>): Promise<void
   const account = await getOrCreateAccount(issuer)
   const balance = await increaseAccountBalance(account, initialAmount, msg.block)
 
-  const snapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-
-  await sendBatchOfMessagesToKafka([
-    { messages: [snapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [token], topic: NEW_TOKEN_TOPIC },
-    { messages: [balance], topic: ACCOUNT_BALANCE_TOPIC },
-  ])
-
-  await token.save()
-  await account.save()
-  await balance.save()
-}
-
-export async function handleMsgMint(msg: CosmosMessage<MsgMint>): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
-  const { coin, sender } = msg.msg.decodedMsg
-  const { height } = msg.block.header
-
-  const token = await getOrCreateToken(coin.denom)
-  token.mintCount += BIGINT_ONE
-  token.totalMinted += BigInt(coin.amount)
-  token.totalSupply += BigInt(coin.amount)
-
-  const account = await getOrCreateAccount(sender)
-  const balance = await increaseAccountBalance(account, coin.amount, msg.block)
-  balance.blockNumber = height
-  balance.timestamp = getTimestamp(msg.block)
-
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyTotalSupply = token.totalSupply
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.dailyMintCount += 1
-  dailySnapshot.dailyMintAmount += BigInt(coin.amount)
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
-
   const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyTotalSupply = token.totalSupply
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.hourlyMintCount += 1
-  hourlySnapshot.hourlyMintAmount += BigInt(coin.amount)
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+
+  const transaction = await upsertTransaction(msg)
 
   await sendBatchOfMessagesToKafka([
+    { messages: [account], topic: ACCOUNT_TOPIC },
     { messages: [balance], topic: ACCOUNT_BALANCE_TOPIC },
+    { messages: [token], topic: TOKEN_TOPIC },
+    { messages: [balance], topic: ACCOUNT_BALANCE_TOPIC },
+    { messages: [transaction], topic: TRANSACTION_TOPIC },
     { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
     { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
   ])
 
   await token.save()
-  await account.save()
-  await balance.save()
   await hourlySnapshot.save()
   await dailySnapshot.save()
+  await transaction.save()
+  await account.save()
+  await balance.save()
 }
 
-export async function handleMsgBurn(msg: CosmosMessage<MsgBurn>): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
+export async function handleMsgMint(msg: CosmosMessage<MsgMint>): Promise<void> {
   const {
     coin: { amount, denom },
     sender,
   } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(denom)
-  token.burnCount += BIGINT_ONE
-  token.totalBurned += BigInt(amount)
-  token.totalSupply -= BigInt(amount)
+  const transaction = await upsertTransaction(msg)
 
-  const account = await getOrCreateAccount(sender)
-  const balance = await decreaseAccountBalance(account, amount, msg.block)
-  balance.blockNumber = height
-  balance.timestamp = getTimestamp(msg.block)
+  const token = await Token.get(denom)
+  if (token) {
+    token.mintCount += BIGINT_ONE
+    token.totalMinted += BigInt(amount)
+    token.totalSupply += BigInt(amount)
 
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyTotalSupply = token.totalSupply
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.dailyBurnCount += 1
-  dailySnapshot.dailyBurnAmount += BigInt(amount)
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
+    const account = await getOrCreateAccount(sender)
+    const balance = await increaseAccountBalance(account, amount, msg.block)
+    balance.blockNumber = height
+    balance.timestamp = getTimestamp(msg.block)
 
-  const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyTotalSupply = token.totalSupply
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.hourlyBurnCount += 1
-  hourlySnapshot.hourlyBurnAmount += BigInt(amount)
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyTotalSupply = token.totalSupply
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.dailyMintCount += 1
+    dailySnapshot.dailyMintAmount += BigInt(amount)
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
 
-  await sendBatchOfMessagesToKafka([
-    { messages: [balance], topic: ACCOUNT_BALANCE_TOPIC },
-    { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
-  ])
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyTotalSupply = token.totalSupply
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.hourlyMintCount += 1
+    hourlySnapshot.hourlyMintAmount += BigInt(amount)
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
 
-  await token.save()
-  await account.save()
-  await balance.save()
-  await hourlySnapshot.save()
-  await dailySnapshot.save()
+    transaction.tokenId = token.id
+
+    await sendBatchOfMessagesToKafka([
+      { messages: [token], topic: TOKEN_TOPIC },
+      { messages: [balance], topic: ACCOUNT_BALANCE_TOPIC },
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+
+    await token.save()
+    await account.save()
+    await balance.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
+}
+
+export async function handleMsgBurn(msg: CosmosMessage<MsgBurn>): Promise<void> {
+  const {
+    coin: { amount, denom },
+    sender,
+  } = msg.msg.decodedMsg
+  const { height } = msg.block.header
+
+  const transaction = await upsertTransaction(msg)
+
+  const token = await Token.get(denom)
+  if (token) {
+    token.burnCount += BIGINT_ONE
+    token.totalBurned += BigInt(amount)
+    token.totalSupply -= BigInt(amount)
+
+    const account = await getOrCreateAccount(sender)
+    const balance = await decreaseAccountBalance(account, amount, msg.block)
+    balance.blockNumber = height
+    balance.timestamp = getTimestamp(msg.block)
+
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyTotalSupply = token.totalSupply
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.dailyBurnCount += 1
+    dailySnapshot.dailyBurnAmount += BigInt(amount)
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
+
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyTotalSupply = token.totalSupply
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.hourlyBurnCount += 1
+    hourlySnapshot.hourlyBurnAmount += BigInt(amount)
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
+
+    transaction.tokenId = token.id
+
+    await sendBatchOfMessagesToKafka([
+      { messages: [balance], topic: ACCOUNT_BALANCE_TOPIC },
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+
+    await token.save()
+    await account.save()
+    await balance.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
 }
 
 export async function handleMsgFreeze(msg: CosmosMessage<MsgFreeze>): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
   const {
     coin: { amount, denom },
   } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(denom)
-  token.frozenAmount += BigInt(amount)
+  const transaction = await upsertTransaction(msg)
 
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.frozenAccountCount += 1
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
+  const token = await Token.get(denom)
+  if (token) {
+    token.frozenAmount += BigInt(amount)
 
-  const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.frozenAccountCount += 1
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.frozenAccountCount += 1
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
 
-  await sendBatchOfMessagesToKafka([
-    { messages: [token], topic: TOKEN_UPDATE_TOPIC },
-    { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
-  ])
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.frozenAccountCount += 1
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
 
-  await token.save()
-  await hourlySnapshot.save()
-  await dailySnapshot.save()
+    transaction.tokenId = token.id
+
+    await sendBatchOfMessagesToKafka([
+      { messages: [token], topic: TOKEN_UPDATE_TOPIC },
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+
+    await token.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
 }
 
 export async function handleMsgUnfreeze(msg: CosmosMessage<MsgUnfreeze>): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
   const {
     coin: { amount, denom },
   } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(denom)
-  token.frozenAmount -= BigInt(amount)
+  const transaction = await upsertTransaction(msg)
 
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.frozenAccountCount -= 1
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
+  const token = await Token.get(denom)
+  if (token) {
+    token.frozenAmount -= BigInt(amount)
 
-  const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.frozenAccountCount -= 1
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.frozenAccountCount -= 1
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
 
-  await sendBatchOfMessagesToKafka([
-    { messages: [token], topic: TOKEN_UPDATE_TOPIC },
-    { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
-  ])
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.frozenAccountCount -= 1
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
 
-  await token.save()
-  await hourlySnapshot.save()
-  await dailySnapshot.save()
+    transaction.tokenId = token.id
+
+    await sendBatchOfMessagesToKafka([
+      { messages: [token], topic: TOKEN_UPDATE_TOPIC },
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+
+    await token.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
 }
 
 export async function handleMsgGloballyFreeze(
   msg: CosmosMessage<MsgGloballyFreeze>,
 ): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
   const { denom } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(denom)
-  token.globallyFrozen = true
+  const transaction = await upsertTransaction(msg)
 
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
+  const token = await Token.get(denom)
+  if (token) {
+    token.globallyFrozen = true
 
-  const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
 
-  await sendBatchOfMessagesToKafka([
-    { messages: [token], topic: TOKEN_UPDATE_TOPIC },
-    { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
-  ])
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
 
-  await token.save()
-  await hourlySnapshot.save()
-  await dailySnapshot.save()
+    transaction.tokenId = token.id
+
+    await sendBatchOfMessagesToKafka([
+      { messages: [token], topic: TOKEN_UPDATE_TOPIC },
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+    await token.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
 }
 
 export async function handleMsgGloballyUnfreeze(
   msg: CosmosMessage<MsgGloballyUnfreeze>,
 ): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
   const { denom } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(denom)
-  token.globallyFrozen = false
+  const transaction = await upsertTransaction(msg)
 
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
+  const token = await Token.get(denom)
+  if (token) {
+    token.globallyFrozen = false
 
-  const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
 
-  await sendBatchOfMessagesToKafka([
-    { messages: [token], topic: TOKEN_UPDATE_TOPIC },
-    { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
-  ])
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
 
-  await token.save()
-  await hourlySnapshot.save()
-  await dailySnapshot.save()
+    transaction.tokenId = token.id
+
+    await sendBatchOfMessagesToKafka([
+      { messages: [token], topic: TOKEN_UPDATE_TOPIC },
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+
+    await token.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
 }
 
 export async function handleMsgSetWhitelistedLimit(
   msg: CosmosMessage<MsgSetWhitelistedLimit>,
 ): Promise<void> {
-  // Early return if transaction was failed
-  if (!isTransactionSuccessful(msg.tx)) {
-    return
-  }
-
   const { coin } = msg.msg.decodedMsg
   const { height } = msg.block.header
 
-  const token = await getOrCreateToken(coin.denom)
+  const transaction = await upsertTransaction(msg)
 
-  const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
-  dailySnapshot.dailyEventCount += 1
-  dailySnapshot.whiteListedAccountCount += 1
-  dailySnapshot.blockNumber = BigInt(height)
-  dailySnapshot.timestamp = getTimestamp(msg.block)
+  const token = await Token.get(coin.denom)
+  if (token) {
+    const dailySnapshot = await getOrCreateTokenDailySnapshot(token, msg.block)
+    dailySnapshot.dailyEventCount += 1
+    dailySnapshot.whiteListedAccountCount += 1
+    dailySnapshot.blockNumber = BigInt(height)
+    dailySnapshot.timestamp = getTimestamp(msg.block)
 
-  const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
-  hourlySnapshot.hourlyEventCount += 1
-  hourlySnapshot.whiteListedAccountCount += 1
-  hourlySnapshot.blockNumber = BigInt(height)
-  hourlySnapshot.timestamp = getTimestamp(msg.block)
+    const hourlySnapshot = await getOrCreateTokenHourlySnapshot(token, msg.block)
+    hourlySnapshot.hourlyEventCount += 1
+    hourlySnapshot.whiteListedAccountCount += 1
+    hourlySnapshot.blockNumber = BigInt(height)
+    hourlySnapshot.timestamp = getTimestamp(msg.block)
 
-  await sendBatchOfMessagesToKafka([
-    { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
-    { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
-  ])
+    transaction.tokenId = token.id
 
-  await hourlySnapshot.save()
-  await dailySnapshot.save()
+    await sendBatchOfMessagesToKafka([
+      { messages: [hourlySnapshot], topic: TOKEN_HOURLY_SNAPSHOT_TOPIC },
+      { messages: [dailySnapshot], topic: TOKEN_DAILY_SNAPSHOT_TOPIC },
+    ])
+
+    await transaction.save()
+    await hourlySnapshot.save()
+    await dailySnapshot.save()
+  }
+
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await transaction.save()
 }
 
-async function getOrCreateToken(tokenId: string): Promise<Token> {
-  let token = await Token.get(tokenId)
+export async function getOrCreateToken(tokenId: string): Promise<Token> {
+  const token = await Token.get(tokenId)
+
+  logger.info(`token: ${toJson(token)}`)
+  logger.info(`tokenid: ${tokenId}`)
 
   if (token) {
     return token
   }
 
-  token = new Token(
+  const newToken = new Token(
     tokenId,
     EMPTY_STRING,
     EMPTY_STRING,
@@ -381,7 +423,7 @@ async function getOrCreateToken(tokenId: string): Promise<Token> {
     BIGINT_ZERO,
   )
 
-  return token
+  return newToken
 }
 
 async function getOrCreateTokenHourlySnapshot(
