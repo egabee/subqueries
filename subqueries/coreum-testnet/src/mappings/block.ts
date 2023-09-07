@@ -9,5 +9,5 @@ export async function handleBlock(block: CosmosBlock): Promise<void> {
 }
 
 export async function handleTx(tx: CosmosTransaction): Promise<void> {
-  tx.decodedTx.body.messages
+  return
 }

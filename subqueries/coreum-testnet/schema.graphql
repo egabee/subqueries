@@ -80,6 +80,11 @@ type EventLog @jsonField {
   attributes: [EventAttribute!]!
 }
 
+type Message @jsonField {
+  type: String!
+  value: String!
+}
+
 type Transaction @entity {
   " Transaction Hash "
   id: ID!
@@ -91,7 +96,7 @@ type Transaction @entity {
   events: [EventLog]
 
   " Messages included in transaction body - saved as json string "
-  messages: [String]
+  messages: [Message]
 
   log: String
 

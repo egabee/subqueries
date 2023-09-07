@@ -1,5 +1,5 @@
 import { CosmosBlock } from '@subql/types-cosmos'
-import { BIGINT_ZERO, MILLISECONDS_PER_HOUR, NEW_CONTRACT_TOPIC } from '../common/constants'
+import { BIGINT_ZERO, MILLISECONDS_PER_HOUR, CONTRACT_TOPIC } from '../common/constants'
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { Contract, ContractHourlySnapshot } from '../types'
 import { getTimestamp } from '../common/utils'
@@ -13,7 +13,7 @@ async function getOrCreateContract(address: string, name?: string): Promise<Cont
   const newContract = new Contract(address)
   newContract.name = name
 
-  await sendBatchOfMessagesToKafka([{ messages: [newContract], topic: NEW_CONTRACT_TOPIC }])
+  await sendBatchOfMessagesToKafka([{ messages: [newContract], topic: CONTRACT_TOPIC }])
 
   return newContract
 }
