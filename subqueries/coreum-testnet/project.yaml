@@ -19,7 +19,7 @@ network:
   # We recommend providing more than one endpoint for improved reliability, performance, and uptime
   # Public nodes may be rate limited, which can affect indexing speed
   # When developing your project we suggest getting a private API key
-  endpoint: ['https://full-node.testnet-1.coreum.dev:26657']
+  endpoint: ['https://full-node-eris.testnet-1.coreum.dev:26657']
   # Optionally provide the HTTP endpoint of a full chain dictionary to speed up processing
   # dictionary: 'https://api.subquery.network/sq/subquery/cosmos-hub-dictionary'
   chainTypes:
@@ -51,7 +51,7 @@ network:
 
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 10751434
+    startBlock: 10863027
     mapping:
       file: ./dist/index.js
       handlers:

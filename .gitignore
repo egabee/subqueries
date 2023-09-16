@@ -1,7 +1,7 @@
 
 # Cosmos proto definitions
-/*/proto/
-!/common/proto
+**/proto/
+!/subqueries/proto
 
 # Subquery generated models
 /subqueries/**/types/
