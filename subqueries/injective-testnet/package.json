@@ -8,7 +8,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "subql build",
-    "cp:proto": "cp -r ../common/proto ./proto",
+    "cp:proto": "cp -r ../proto ./proto",
     "codegen": "subql codegen",
     "start:docker": "docker-compose pull && docker-compose up --remove-orphans",
     "dev": "subql codegen && subql build && docker-compose pull && docker-compose up --remove-orphans",
