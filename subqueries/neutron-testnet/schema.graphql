@@ -1,0 +1,341 @@
+# Subquery schema: neutron testnet network
+# Version: 1.0.0
+
+#############################
+###### Chain Timeseries #####
+#############################
+
+type ChainHourlySnapshot @entity {
+  " { Chain id }-{# of hours since Unix epoch time }"
+  id: ID!
+
+  " Total number of transactions in a hour "
+  hourlyTransactionCount: Int!
+
+  " Total number of failed transactions in a hour "
+  hourlyFailedTransactionCount: Int!
+
+  " Sum of gas used in transaction in a hour "
+  hourlyGasConsumption: BigInt!
+
+  " Block number of this snapshot "
+  blockNumber: BigInt!
+
+  " Timestamp of this snapshot "
+  timestamp: BigInt!
+}
+
+#############################
+##### Contract Metadata #####
+#############################
+
+type Contract @entity {
+  " Address of the contract "
+  id: ID!
+
+  " Name of the smart contract "
+  name: String
+
+  # transfers: [TransferEvent!] @derivedFrom(field: "contract")
+}
+
+###############################
+##### Contract Timeseries #####
+###############################
+
+type ContractHourlySnapshot @entity {
+  " { Contract Address }-{ # of hours since Unix epoch time } "
+  id: ID!
+
+  " Contract this snapshot is associated with "
+  contract: Contract!
+
+  " Total number of transactions in a hour "
+  hourlyTransactionCount: Int!
+
+  " Total number of failed transactions in a hour "
+  hourlyFailedTransactionCount: Int!
+
+  " Sum of gas used in transaction in a hour "
+  hourlyGasConsumption: BigInt!
+
+  " Block number of this snapshot "
+  blockNumber: BigInt!
+
+  " Timestamp of this snapshot "
+  timestamp: BigInt!
+}
+
+##################################
+##### Transaction-Level Data #####
+##################################
+
+type EventAttribute @jsonField {
+  key: String!
+  value: String!
+}
+
+type EventLog @jsonField {
+  type: String!
+  attributes: [EventAttribute!]!
+}
+
+type Message @jsonField {
+  type: String!
+  value: String!
+}
+
+type Transaction @entity {
+  " Transaction Hash "
+  id: ID!
+
+  " The token this transaction belongs to "
+  token: Token
+
+  " Events emitted from the transaction "
+  events: [EventLog]
+
+  " Messages included in transaction body - saved as json string "
+  messages: [Message]
+
+  log: String
+
+  success: Boolean!
+
+  gasUsed: BigInt!
+
+  gasWanted: BigInt!
+
+  " Block number in which the balance was last modified "
+  blockNumber: Int!
+
+  "Timestamp in which the balance was last modified "
+  timestamp: BigInt!
+}
+
+##################################
+######## Account MetaData ########
+##################################
+
+" An account is a unique address "
+type Account @entity {
+  " Address of the account "
+  id: ID!
+
+  # " Token transfers to this account "
+  # transferTo: [TransferEvent!]! @derivedFrom(field: "to")
+
+  # " Token transfers from this account "
+  # transferFrom: [TransferEvent!]! @derivedFrom(field: "from")
+
+  " Token balances that this account holds "
+  balances: [AccountBalance!]! @derivedFrom(field: "account")
+
+  " Token balances snapshot that this account holds "
+  balancesSnapshot: [AccountBalanceDailySnapshot!]! @derivedFrom(field: "account")
+}
+
+type AccountBalance @entity {
+  " { Address Of the Account }-{ Denom of the Token if any } "
+  id: ID!
+
+  " Account address "
+  account: Account!
+
+  " Current account balance "
+  amount: BigInt!
+
+  " Block number in which the balance was last modified "
+  blockNumber: Int!
+
+  "Timestamp in which the balance was last modified "
+  timestamp: BigInt!
+}
+
+###############################
+###### Account Timeseries #####
+###############################
+
+type AccountBalanceDailySnapshot @entity {
+  " { Address Of the Account }-{ Address of the Token if any }-{ # of days since Unix epoch time } "
+  id: ID!
+
+  " Account address "
+  account: Account!
+
+  " Token address "
+  token: Token!
+
+  " Current account balance "
+  amount: BigInt!
+
+  " Block number in which the balance was last modified "
+  blockNumber: BigInt!
+
+  " Timestamp in which the balance was last modified "
+  timestamp: BigInt!
+}
+
+" Represents a token entity. "
+type Token @entity {
+  " { subunit }-{ Address of the token issuer } "
+  id: ID!
+
+  " Address of the token issuer. "
+  issuer: String!
+
+  " The symbol representing the token. "
+  symbol: String!
+
+  " The subunit of the token. "
+  subunit: String!
+
+  " The precision level for the token. "
+  precision: Int!
+
+  " The initial amount of the token. "
+  initialAmount: String!
+
+  " A description of the token. "
+  description: String
+
+  " Features associated with the token. "
+  features: String!
+
+  " The burn rate for the token. "
+  burnRate: String!
+
+  frozenAmount: BigInt!
+
+  globallyFrozen: Boolean!
+
+  " The send commission rate for the token. "
+  sendCommissionRate: String!
+
+  " Total number of unique token holders who are currently holding more the token "
+  currentHolderCount: BigInt!
+
+  " Total number of cumulative unique token holders who held or are holding the token "
+  cumulativeHolderCount: BigInt!
+
+  " Total number of token transfer events "
+  transferCount: BigInt!
+
+  " Total number of token mint events "
+  mintCount: BigInt!
+
+  " Total number of token burn events "
+  burnCount: BigInt!
+
+  " Total token supply "
+  totalSupply: BigInt!
+
+  " Total token burned "
+  totalBurned: BigInt!
+
+  " Total token minted "
+  totalMinted: BigInt!
+
+  " List of token transfers "
+  transfers: [Transaction!]! @derivedFrom(field: "token")
+}
+
+###############################
+####### Token Timeseries ######
+###############################
+
+type TokenDailySnapshot @entity {
+  " { Token Address }-{ # of days since Unix epoch time } "
+  id: ID!
+
+  " Token this snapshot is associated with "
+  token: Token!
+
+  " Daily total Supply of the token "
+  dailyTotalSupply: BigInt!
+
+  " number of accounts holding the token "
+  currentHolderCount: BigInt!
+
+  " number of cumulative unique holders "
+  cumulativeHolderCount: BigInt!
+
+  frozenAccountCount: Int!
+
+  whiteListedAccountCount: Int!
+
+  " Total number of events occurred in a day "
+  dailyEventCount: Int!
+
+  " Total number of transfers in a day "
+  dailyTransferCount: Int!
+
+  " Total number of token transfered in a day "
+  dailyTransferAmount: BigInt!
+
+  " Total number of mints in a day "
+  dailyMintCount: Int!
+
+  " Total number of token minted in a day "
+  dailyMintAmount: BigInt!
+
+  " Total number of burns in a day "
+  dailyBurnCount: Int!
+
+  " Total number of token burnt in a day "
+  dailyBurnAmount: BigInt!
+
+  " Block number of this snapshot "
+  blockNumber: BigInt!
+
+  " Timestamp of this snapshot "
+  timestamp: BigInt!
+}
+
+type TokenHourlySnapshot @entity {
+  " { Token Denom }-{ # of hours since Unix epoch time } "
+  id: ID!
+
+  " Token this snapshot is associated with "
+  token: Token!
+
+  " Hourly total Supply of the token "
+  hourlyTotalSupply: BigInt!
+
+  " number of accounts holding this token "
+  currentHolderCount: BigInt!
+
+  " number of cumulative unique holders "
+  cumulativeHolderCount: BigInt!
+
+  frozenAccountCount: Int!
+
+  whiteListedAccountCount: Int!
+
+  " Total number of events occurred in an hour "
+  hourlyEventCount: Int!
+
+  " Total number of transfers in a hour "
+  hourlyTransferCount: Int!
+
+  " Total amount of token transfered in a hour "
+  hourlyTransferAmount: BigInt!
+
+  " Total number of mints in a hour "
+  hourlyMintCount: Int!
+
+  " Total amount of token minted in a hour "
+  hourlyMintAmount: BigInt!
+
+  " Total number of burns in a hour "
+  hourlyBurnCount: Int!
+
+  " Total number of token burnt in a hour "
+  hourlyBurnAmount: BigInt!
+
+  " Block number of this snapshot "
+  blockNumber: BigInt!
+
+  " Timestamp of this snapshot "
+  timestamp: BigInt!
+}

@@ -1,0 +1,53 @@
+specVersion: 1.0.0
+name: neutron-subql
+version: 0.0.1
+runner:
+  node:
+    name: '@subql/node-cosmos'
+    version: '*'
+  query:
+    name: '@subql/query'
+    version: '*'
+description: >-
+  Neutron subql indexer
+repository: 'https://github.com/web3query/subqueries/subqueries/neutron-subql'
+schema:
+  file: ./schema.graphql
+network:
+  chainId: pion-1
+  # This endpoint must be a public non-pruned archive node
+  # We recommend providing more than one endpoint for improved reliability, performance, and uptime
+  # Public nodes may be rate limited, which can affect indexing speed
+  # When developing your project we suggest getting a private API key
+  endpoint: ['https://rpc-t.neutron.nodestake.top']
+  # Optionally provide the HTTP endpoint of a full chain dictionary to speed up processing
+  # dictionary: 'https://api.subquery.network/sq/subquery/cosmos-hub-dictionary'
+  chainTypes:
+    cosmwasm.wasm.v1.MsgInstantiateContract:
+      file: ./proto/cosmwasm/wasm/v1/tx.proto
+      messages:
+        - MsgInstantiateContract
+    cosmos.bank.v1beta1:
+      file: ./proto/cosmos/bank/v1beta1/tx.proto
+      messages:
+        - MsgSend
+    cosmos.base.v1beta1.Coin:
+      file: ./proto/cosmos/base/v1beta1/coin.proto
+      messages:
+        - Coin
+
+dataSources:
+  - kind: cosmos/Runtime
+    startBlock: 5565301
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        # # Using block handlers slows your project down as they can be executed with each and every block. Only use if you need to
+        # - handler: handleBlock
+        #   kind: cosmos/BlockHandler
+        # - handler: handleTransaction
+        #   kind: cosmos/TransactionHandler
+        - handler: handleMsgInstantiateContract
+          kind: cosmos/MessageHandler
+          filter:
+            type: /cosmwasm.wasm.v1.MsgInstantiateContract
