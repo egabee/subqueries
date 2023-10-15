@@ -19,5 +19,6 @@ export const TOKEN_HOURLY_SNAPSHOT_TOPIC = 'token-hourly-snapshot'
 export const TOKEN_DAILY_SNAPSHOT_TOPIC = 'token-daily-snapshot'
 
 export const TRANSACTION_TOPIC = 'transaction'
+export const TOPIC_NEW_TX = 'new-tx'
 
 export const TESTCORE = /\d+utestcore/
