@@ -5,3 +5,4 @@ dotenv.config({ path: '/app/.env' })
 export * from './mappings/token'
 export * from './mappings/block'
 export * from './mappings/transfer'
+export { handleTransaction } from './mappings/transaction-handler'

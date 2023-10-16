@@ -58,8 +58,8 @@ dataSources:
         # # Using block handlers slows your project down as they can be executed with each and every block. Only use if you need to
         - handler: handleBlock
           kind: cosmos/BlockHandler
-        # - handler: handleTransaction
-        #   kind: cosmos/TransactionHandler
+        - handler: handleTransaction
+          kind: cosmos/TransactionHandler
         - handler: handleIssueMsg
           kind: cosmos/MessageHandler
           filter:
