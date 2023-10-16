@@ -1,15 +1,12 @@
 import { CosmosMessage } from '@subql/types-cosmos'
 
 import { MsgSend } from './coreum-types'
-import { decreaseAccountBalance, getOrCreateAccount, increaseAccountBalance } from './account'
-import { getTimestamp } from '../common/utils'
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
-import { ACCOUNT_BALANCE_TOPIC, BIGINT_ONE, TRANSACTION_TOPIC } from '../common/constants'
-import { createTransaction } from './tx'
-import { Token } from '../types'
+import { TOPIC_MESSAGE } from '../common/constants'
+import { createTransaction } from './helper'
 
 export async function handleMsgSend(msg: CosmosMessage<MsgSend>): Promise<void> {
-  // const { fromAddress, toAddress } = msg.msg.decodedMsg
+  // const { fromAddress, toAddress, amount } = msg.msg.decodedMsg
   // const { height } = msg.block.header
   // const timestamp = getTimestamp(msg.block)
 
@@ -48,5 +45,5 @@ export async function handleMsgSend(msg: CosmosMessage<MsgSend>): Promise<void> 
   // }
 
   const transaction = createTransaction('MsgSend', msg)
-  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TRANSACTION_TOPIC }])
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TOPIC_MESSAGE }])
 }
