@@ -1,6 +1,6 @@
 import { CosmosMessage } from '@subql/types-cosmos'
 
-import { MsgSend } from './coreum-types'
+import { MsgMultiSend, MsgSend } from './coreum-types'
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { TOPIC_MESSAGE } from '../common/constants'
 import { createTransaction } from './helper'
@@ -45,5 +45,10 @@ export async function handleMsgSend(msg: CosmosMessage<MsgSend>): Promise<void> 
   // }
 
   const transaction = createTransaction('MsgSend', msg)
+  await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TOPIC_MESSAGE }])
+}
+
+export async function handleMsgMultiSend(msg: CosmosMessage<MsgMultiSend>): Promise<void> {
+  const transaction = createTransaction('MsgMultiSend', msg)
   await sendBatchOfMessagesToKafka([{ messages: [transaction], topic: TOPIC_MESSAGE }])
 }

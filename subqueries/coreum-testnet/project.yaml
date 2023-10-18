@@ -27,6 +27,7 @@ network:
       file: ./proto/cosmos/bank/v1beta1/tx.proto
       messages:
         - MsgSend
+        - MsgMultiSend
     cosmos.base.v1beta1.Coin:
       file: ./proto/cosmos/base/v1beta1/coin.proto
       messages:
@@ -74,6 +75,10 @@ dataSources:
           kind: cosmos/MessageHandler
           filter:
             type: /cosmos.bank.v1beta1.MsgSend
+        - handler: handleMsgMultiSend
+          kind: somos/MessageHandler
+          filter:
+            type: /cosmos.bank.v1beta1.MsgMultiSend
         - handler: handleMsgMint
           kind: cosmos/MessageHandler
           filter:

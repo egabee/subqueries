@@ -51,7 +51,7 @@ export async function getOrCreateTransaction(txId: string): Promise<Transaction>
   return transaction
 }
 
-export function createTransaction<T>(type: string, msg: CosmosMessage<T>): Transaction {
+export function createTransaction<T>(messageType: string, msg: CosmosMessage<T>): Transaction {
   const transaction = Transaction.create({
     id: msg.tx.hash,
     events: [],
@@ -76,7 +76,7 @@ export function createTransaction<T>(type: string, msg: CosmosMessage<T>): Trans
   }))
 
   transaction.events = [...events]
-  transaction.messages = [{ type, value: toJson(msg.msg.decodedMsg) }]
+  transaction.messages = [{ type: messageType, value: toJson(msg.msg.decodedMsg) }]
 
   transaction.blockNumber = msg.block.header.height
   transaction.timestamp = getTimestamp(msg.block)

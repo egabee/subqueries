@@ -71,8 +71,12 @@ export type MsgSetWhitelistedLimit = {
 
 // TODO: Move it to cosmos types?
 export type MsgSend = {
-  '@type': string
   amount: Coin[]
   toAddress: string
   fromAddress: string
+}
+
+export type MsgMultiSend = {
+  inputs: { coins: Coin[]; address: string }[]
+  outputs: { coins: Coin[]; address: string }[]
 }
