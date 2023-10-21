@@ -76,7 +76,7 @@ dataSources:
           filter:
             type: /cosmos.bank.v1beta1.MsgSend
         - handler: handleMsgMultiSend
-          kind: somos/MessageHandler
+          kind: cosmos/MessageHandler
           filter:
             type: /cosmos.bank.v1beta1.MsgMultiSend
         - handler: handleMsgMint
