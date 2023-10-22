@@ -1,15 +1,5 @@
 import { Kafka } from 'kafkajs'
 import { toJson } from './utils'
-import {
-  Account,
-  AccountBalance,
-  ChainHourlySnapshot,
-  Contract,
-  ContractHourlySnapshot,
-  Token,
-  TokenDailySnapshot,
-  TokenHourlySnapshot,
-} from '../types'
 
 const kafka = new Kafka({
   brokers: process.env.KAFKA_BROKERS?.split(',') || [],
@@ -30,20 +20,9 @@ async function disconnectProducer(): Promise<void> {
 
 connectProducer()
 
-type MessageType =
-  | Account
-  | Contract
-  | AccountBalance
-  | ContractHourlySnapshot
-  | ChainHourlySnapshot
-  | { height: number }
-  | TokenHourlySnapshot
-  | Token
-  | TokenDailySnapshot
-
 interface TopicMessages {
   topic: string
-  messages: MessageType[]
+  messages: any[]
 }
 
 /**

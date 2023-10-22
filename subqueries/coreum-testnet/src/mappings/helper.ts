@@ -1,5 +1,4 @@
 import { CosmosMessage } from '@subql/types-cosmos'
-import { EventLog, Transaction } from '../types'
 import { BIGINT_ZERO } from '../common/constants'
 import {
   decodeBase64IfEncoded,
@@ -30,29 +29,34 @@ interface Tx {
   events: string[]
 }
 
-export async function getOrCreateTransaction(txId: string): Promise<Transaction> {
-  let transaction = await Transaction.get(txId)
+interface Message {
+  type: string
+  value: string
+}
 
-  if (transaction) {
-    return transaction
-  }
+interface EventLog {
+  type: string
+  attributes: { key: string; value: string }[]
+}
 
-  transaction = Transaction.create({
-    id: txId,
-    events: [],
-    messages: [],
-    gasUsed: BIGINT_ZERO,
-    gasWanted: BIGINT_ZERO,
-    success: true,
-    blockNumber: 0,
-    timestamp: BIGINT_ZERO,
-  })
-
-  return transaction
+interface Transaction {
+  id: string
+  //Events emitted from the transaction
+  events: EventLog[]
+  //" Messages included in transaction body - saved as json string "
+  messages: Message[]
+  log: string
+  success: boolean
+  gasUsed: bigint
+  gasWanted: bigint
+  //" Block number in which the balance was last modified "
+  blockNumber: number
+  // "Timestamp in which the balance was last modified "
+  timestamp: bigint
 }
 
 export function createTransaction<T>(messageType: string, msg: CosmosMessage<T>): Transaction {
-  const transaction = Transaction.create({
+  const transaction: Transaction = {
     id: msg.tx.hash,
     events: [],
     messages: [],
@@ -61,7 +65,8 @@ export function createTransaction<T>(messageType: string, msg: CosmosMessage<T>)
     success: true,
     blockNumber: 0,
     timestamp: BIGINT_ZERO,
-  })
+    log: '',
+  }
 
   transaction.success = isTransactionSuccessful(msg.tx)
   transaction.gasUsed = BigInt(msg.tx.tx.gasUsed)

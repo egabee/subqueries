@@ -37,6 +37,11 @@ network:
       file: ./proto/cosmos/base/v1beta1/coin.proto
       messages:
         - Coin
+    cosmwasm.wasm.v1.tx:
+      file: ./proto/cosmwasm/wasm/v1/tx.proto
+      messages:
+        - MsgInstantiateContract
+        - MsgExecuteContract
     coreum.asset.ft.v1:
       file: ./proto/coreum/asset/ft/v1/tx.proto
       messages:
@@ -112,3 +117,11 @@ dataSources:
           kind: cosmos/MessageHandler
           filter:
             type: /coreum.asset.ft.v1.MsgSetWhitelistedLimit
+        - handler: handleMsgInstantiateContract
+          kind: cosmos/MessageHandler
+          filter:
+            type: /cosmwasm.wasm.v1.MsgInstantiateContract
+        - handler: handleMsgExecuteContract
+          kind: cosmos/MessageHandler
+          filter:
+            type: /cosmwasm.wasm.v1.MsgExecuteContract
