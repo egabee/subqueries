@@ -8,20 +8,14 @@ runner:
   query:
     name: '@subql/query'
     version: '*'
-description: >-
-  Coreum subql indexer
+description: Coreum subql indexer
 repository: 'https://github.com/web3query/coreum-subql'
 schema:
   file: ./schema.graphql
 network:
   chainId: coreum-testnet-1
-  # This endpoint must be a public non-pruned archive node
-  # We recommend providing more than one endpoint for improved reliability, performance, and uptime
-  # Public nodes may be rate limited, which can affect indexing speed
-  # When developing your project we suggest getting a private API key
-  endpoint: ['https://full-node-eris.testnet-1.coreum.dev:26657']
-  # Optionally provide the HTTP endpoint of a full chain dictionary to speed up processing
-  # dictionary: 'https://api.subquery.network/sq/subquery/cosmos-hub-dictionary'
+  # checkd that same endpoint is used in the cored nft issuer
+  endpoint: ['https://full-node.testnet-1.coreum.dev:26657']
   chainTypes:
     cosmos.bank.v1beta1:
       file: ./proto/cosmos/bank/v1beta1/tx.proto
@@ -42,9 +36,32 @@ network:
       messages:
         - MsgInstantiateContract
         - MsgExecuteContract
+
+  # check that i make the right import of the file and make it for the msg (in the cosmosmsgtypes.ts)
+    coreum.asset.nft.v1:
+      file: ./proto/coreum/asset/nft/v1/tx.proto
+      messages:
+        - MsgIssueClass
+
+    # ===========features=================
+    coreum.asset.nft.v1.ClassFeature:
+      file: ./proto/coreum/asset/nft/v1/nft.proto
+      messages:
+        - ClassFeature
+      
+
+    # gogole proto thing 
+    google.protobuf.Any:
+        file: "./proto/google/protobuf/any.proto"
+        messages:
+         - Any
+        
+
+
     coreum.asset.ft.v1:
       file: ./proto/coreum/asset/ft/v1/tx.proto
       messages:
+      
         - MsgIssue
         - MsgMint
         - MsgBurn
@@ -59,28 +76,16 @@ network:
         - Token
         - Feature
         - Definition
-
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 11403022
+    startBlock: 13231900
     mapping:
       file: ./dist/index.js
       handlers:
-        # # Using block handlers slows your project down as they can be executed with each and every block. Only use if you need to
-        # - handler: handleBlock
-        #   kind: cosmos/BlockHandler
-        # - handler: handleTransaction
-        #   kind: cosmos/TransactionHandler
-        - handler: handleIssueMsg
+        - handler: handleNftIssue
           kind: cosmos/MessageHandler
           filter:
-            type: /coreum.asset.ft.v1.MsgIssue
-        # - handler: handleEvent
-        #   kind: cosmos/EventHandler
-        #   filter:
-        #     type: transfer
-        #     messageFilter:
-        #       type: /cosmos.bank.v1beta1.MsgSend
+            type: /coreum.asset.nft.v1.MsgIssueClass
         - handler: handleMsgSend
           kind: cosmos/MessageHandler
           filter:
