@@ -17,6 +17,7 @@ network:
   # checkd that same endpoint is used in the cored nft issuer
   endpoint: ['https://full-node.testnet-1.coreum.dev:26657']
   chainTypes:
+  #------------------ bank module---------------------
     cosmos.bank.v1beta1:
       file: ./proto/cosmos/bank/v1beta1/tx.proto
       messages:
@@ -42,6 +43,9 @@ network:
       file: ./proto/coreum/asset/nft/v1/tx.proto
       messages:
         - MsgIssueClass
+        - MsgMint
+        - MsgBurn
+        - MsgFreeze
 
     # ===========features=================
     coreum.asset.nft.v1.ClassFeature:
@@ -82,10 +86,34 @@ dataSources:
     mapping:
       file: ./dist/index.js
       handlers:
+        # -----------------------------------------------------------------------
+        # =========== handlers for NFT message types ================
+        # -----------------------------------------------------------------------
+
         - handler: handleNftIssue
           kind: cosmos/MessageHandler
           filter:
             type: /coreum.asset.nft.v1.MsgIssueClass
+        
+        - handler: handleMsgMint
+          kind: cosmos/MessageHandler
+          filter: 
+            type: /coreum.asset.nft.v1.MsgMint
+
+        - handler: handleMsgBurn
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.nft.v1.MsgBurn
+          
+        - handler: handleMsgFreeze
+          kind: cosmos/MessageHandler
+          filter:
+            type: /coreum.asset.nft.v1.MsgFreeze
+
+        # -----------------------------------------------------------------------
+        # =========== handlers for Bank module ================
+        # -----------------------------------------------------------------------
+
         - handler: handleMsgSend
           kind: cosmos/MessageHandler
           filter:
@@ -94,6 +122,11 @@ dataSources:
           kind: cosmos/MessageHandler
           filter:
             type: /cosmos.bank.v1beta1.MsgMultiSend
+            
+        # -----------------------------------------------------------------------
+        # =========== handlers for FT(fungible) message types ================
+        # -----------------------------------------------------------------------
+
         - handler: handleMsgMint
           kind: cosmos/MessageHandler
           filter:
