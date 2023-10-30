@@ -27,6 +27,8 @@ export async function handleNftIssue(message: CosmosMessage<MsgIssueClass>): Pro
   // to get any propertie of data 
   // const issuer = message.msg.decodedMsg.issuer
   // const symbol = message.msg.decodedMsg.symbol
+
+  
   const transaction = createTransaction('MsgIssueClass',message)
   await sendBatchOfMessagesToKafka([{ messages: [transaction],topic: TOPIC_MESSAGE }])
 }
@@ -69,5 +71,40 @@ export interface MsgFreeze {
 export async function handleNftMsgFreeze(message:CosmosMessage<MsgFreeze>):Promise<void>{
   // const freeze=message.msg.decodedMsg.classId
   const transaction=createTransaction('MsgFreezeNFT',message)
+  await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
+}
+
+// --------------------------------------------------
+export interface MsgUnfreeze {
+  sender: string;
+  classId: string;
+  id: string;
+}
+export async function handleNftMsgUnfreeze(message:CosmosMessage<MsgUnfreeze>):Promise<void>{
+  const transaction=createTransaction('MsgUnFreezeNFT',message)
+  await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
+}
+
+export interface MsgAddToWhitelist {
+  sender: string;
+  classId: string;
+  id: string;
+  account: string;
+}
+
+export async function handleNftMsgAddToWhitelist(message:CosmosMessage<MsgAddToWhitelist>):Promise<void> {
+  const transaction=createTransaction('MsgAddToWhitelistNFT',message)
+  await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
+}
+
+export interface MsgRemoveFromWhitelist {
+  sender: string;
+  classId: string;
+  id: string;
+  account: string;
+}
+
+export async function handleNftMsgRemoveFromWhitelist(message:CosmosMessage<MsgRemoveFromWhitelist>):Promise<void> {
+  const transaction=createTransaction('MsgRemoveFromWhitelistNFT',message)
   await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
 }
