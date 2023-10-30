@@ -1,5 +1,4 @@
 import { CosmosMessage } from '@subql/types-cosmos'
-import {MsgIssueMessage,MsgMintMessageNft,MsgBurnMessageNft,MsgFreezeMessageNft} from '../types/CosmosMessageTypes'
 import { sendBatchOfMessagesToKafka } from '../common/kafka-producer'
 import { TOPIC_MESSAGE } from '../common/constants'
 import { createTransaction } from './helper'
@@ -40,10 +39,10 @@ export interface MsgMint {
     uriHash: string;
     data: any;
 }
-export async function handleNftMsgMint(message:CosmosMessage<MsgMintMessageNft>):Promise<void>{
+export async function handleNftMsgMint(message:CosmosMessage<MsgMint>):Promise<void>{
     // const mint=message.msg.decodedMsg.data
 
-    const transaction = createTransaction('MsgMint',message)
+    const transaction = createTransaction('MsgMintNFT',message)
     await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
 
 
@@ -54,9 +53,9 @@ export interface MsgBurn {
   classId: string;
   id: string;
 }
-export async function handleNftMsgBurn(message:CosmosMessage<MsgBurnMessageNft>):Promise<void>{
+export async function handleNftMsgBurn(message:CosmosMessage<MsgBurn>):Promise<void>{
   // const burn=message.msg.decodedMsg.data
-  const transaction = createTransaction('MsgBurn',message)
+  const transaction = createTransaction('MsgBurnNFT',message)
   await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
     
 
@@ -67,8 +66,8 @@ export interface MsgFreeze {
   classId: string;
   id: string;
 }
-export async function handleNftMsgFreeze(message:CosmosMessage<MsgFreezeMessageNft>):Promise<void>{
+export async function handleNftMsgFreeze(message:CosmosMessage<MsgFreeze>):Promise<void>{
   // const freeze=message.msg.decodedMsg.classId
-  const transaction=createTransaction('MsgFreeze',message)
+  const transaction=createTransaction('MsgFreezeNFT',message)
   await sendBatchOfMessagesToKafka([{messages:[transaction],topic:TOPIC_MESSAGE}])
 }
