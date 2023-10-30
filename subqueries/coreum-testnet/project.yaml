@@ -108,7 +108,7 @@ dataSources:
         - handler: handleMsgFreeze
           kind: cosmos/MessageHandler
           filter:
-            type: /coreum.asset.ft.v1.MsgFreeze
+            type: /coreum.asset.nft.v1.MsgFreeze
 
         # -----------------------------------------------------------------------
         # =========== handlers for Bank module ================
