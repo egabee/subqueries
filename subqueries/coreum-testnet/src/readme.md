@@ -1,7 +1,7 @@
 # Types Conflict Issue - Notice and Solution
 
 ## Issue Description
-When running the indexer, an issue arises due to conflicts in the types of `MsgMint` between FT (Fungible Token) and NFT (Non-Fungible Token) within the `CosmosMessageTypes.ts` file. These message types lack differentiation, causing conflict during code generation or compilation.
+When running the indexer, an issue arises due to conflicts in the types of `MsgMint` between FT (Fungible Token) and NFT (Non-Fungible Token) within the `./src/types/CosmosMessagTypes.ts` file. These message types lack differentiation, causing conflict during code generation or compilation.
 
 ## Problem Statement
 The types `MsgMint` for both FT and NFT do not have any distinction in the `CosmosMessageTypes.ts` file. This similarity leads to potential conflicts when handling Fungible Token and Non-Fungible Token transactions, especially during the process of running the indexer.
@@ -24,3 +24,4 @@ export type MsgIssueClassMessage = CosmosMessage<MsgIssueClass>;
 export type MsgMintMessageNFT = CosmosMessage<MsgMintNFT>;
 export type MsgBurnMessageNFT = CosmosMessage<MsgBurnNFT>;
 export type MsgFreezeMessageNFT = CosmosMessage<MsgFreezeNFT>;
+```
