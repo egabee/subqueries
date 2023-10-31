@@ -1,7 +1,7 @@
 {
-  "name": "coreum-testnet",
+  "name": "coreum",
   "version": "0.0.1",
-  "description": "Coreum testnet subquery",
+  "description": "Coreum subquery",
   "homepage": "https://github.com/web3query/subqueries",
   "repository": "github:web3query/subqueries",
   "author": "Web3query Team",
@@ -9,7 +9,7 @@
   "scripts": {
     "build": "subql build",
     "codegen": "subql codegen",
-    "cp:proto": "cp -r ../proto ./proto",
+    "cp:proto": "rm -rf ./proto &&cp -r ../proto ./proto",
     "start:docker": "docker compose pull && docker compose up --remove-orphans",
     "dev": "subql codegen && subql build && docker-compose pull && docker-compose up --remove-orphans",
     "prepack": "rm -rf dist && npm run build",
