@@ -80,3 +80,30 @@ export type MsgMultiSend = {
   inputs: { coins: Coin[]; address: string }[]
   outputs: { coins: Coin[]; address: string }[]
 }
+
+/** MsgExecuteContract submits the given message data to a smart contract */
+export interface MsgExecuteContract {
+  /** Sender is the that actor that signed the messages */
+  sender: string
+  /** Contract is the address of the smart contract */
+  contract: string
+  /** Funds coins that are transferred to the contract on execution */
+  funds: Coin[]
+}
+
+/**
+ * MsgInstantiateContract create a new smart contract instance for the given
+ * code id.
+ */
+export interface MsgInstantiateContract {
+  /** Sender is the that actor that signed the messages */
+  sender: string
+  /** Admin is an optional address that can execute migrations */
+  admin: string
+  /** CodeID is the reference to the stored WASM code */
+  codeId: number
+  /** Label is optional metadata to be stored with a contract instance. */
+  label: string
+  /** Funds coins that are transferred to the contract on instantiation */
+  funds: Coin[]
+}
