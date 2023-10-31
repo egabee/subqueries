@@ -111,22 +111,22 @@ dataSources:
         - handler: handleMsgFreeze
           kind: cosmos/MessageHandler
           filter:
-            type: /coreum.asset.ft.v1.MsgFreeze
+            type: /coreum.asset.nft.v1.MsgFreeze
         
         - handler: handleMsgUnFreeze
           kind: cosmos/MessageHandler
           filter:
-            type: /coreum.asset.ft.v1.MsgUnfreeze
+            type: /coreum.asset.nft.v1.MsgUnfreeze
 
         - handler: handleMsgAddToWhitelist 
           kind: cosmos/MessageHandler
           filter:
-            type: /coreum.asset.ft.v1.MsgAddToWhitelist 
+            type: /coreum.asset.nft.v1.MsgAddToWhitelist 
 
         - handler: handleMsgRemoveFromWhitelist 
           kind: cosmos/MessageHandler
           filter:
-            type: /coreum.asset.ft.v1.MsgRemoveFromWhitelist 
+            type: /coreum.asset.nft.v1.MsgRemoveFromWhitelist 
         
         # -----------------------------------------------------------------------
         # =========== handlers for Bank module ================
